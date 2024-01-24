@@ -14,8 +14,7 @@ Table of Contents
     - [Downloading](#downloading)
     - [Compiling](#compiling)
     - [Testing](#testing)
-  - [Setting up Background Error](#setting-up-background-error)
-  - [Running 3DVAR](#running-3dvar)
+  - [Tutorial Experiments](#tutorial-experiments)
   
 ## Intro
 This tutorial will help users to setup an environment on a supported machine, compile SOCA, and run a single cycle of various DA methods using provided scripts. It is up to the user to setup their own model conifguration, and HPC cycling script, for their own experiments.
@@ -113,8 +112,8 @@ make -j 5
 
 Assuming SOCA compiled correctly, you should be able to run the ctests, which are simple tests using a 5 degree ocean grid. See the notes [here](https://jointcenterforsatellitedataassimilation-jedi-docs.readthedocs-hosted.com/en/7.0.0/using/running_skylab/HPC_users_guide.html) about obtaining a compute node before running the tests. Assuming you are within the `build/soca` directory, running `ctest` will only run the tests for SOCA (there are hundreds of other tests for the other JEDI components that you probably don't care about)
 
-## Setting up Background Error
-(TODO)
-
-## Running 3DVAR
-(TODO)
+## Tutorial Experiments
+The files need for a single cycle of several DA methods are provided (observations, background, static files, and yaml configurations). See each section for more detail.
+1. [3DVAR](3dvar/README.md) (🚧 documentation still being developed)
+2. [3DEnVAR](letkf/README.md) (🚧 documentation still being developed)
+3. [LETKF](letkf/README.md) (🚧 documentation still being developed)
