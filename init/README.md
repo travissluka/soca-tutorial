@@ -238,6 +238,7 @@ $$ \mathbf{K} = \begin{bmatrix} I & 0 & 0 & 0 \\
                  \end{bmatrix}$$
 
 The main balance we'll show here is the one connecting SSH with the density in the column, this is important for being able to assimilate altimetry observations.
+
 $$ \delta \eta_B = - \int^0_{bottom}{\frac{\delta\rho(T,S,z)}{\rho_0}dz}$$
 
 ```yaml
