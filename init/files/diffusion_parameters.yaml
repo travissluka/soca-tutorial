@@ -1,0 +1,40 @@
+geometry: &geom
+  geom_grid_file: ./soca_gridspec.nc
+  mom6_input_nml: ./mom_input.nml
+  fields metadata: ./fields_metadata.yml
+
+background:
+  read_from_file: 1
+  basename: ./bkg/
+  date: &date 2022-02-15T12:00:00Z
+  ocn_filename: ocn.bkg.2019080112.nc
+  state variables: [tocn, socn, uocn, vocn, ssh]
+
+background error:
+  covariance model: SABER
+  saber central block:
+    saber block name: EXPLICIT_DIFFUSION
+    geometry: *geom
+    calibration:
+      normalization:
+        method: randomization
+        iterations: 100       #< in the real world you'll want to use 1e4 or so
+
+      groups:
+      - name: diffusion_hz
+        horizontal:
+          as gaussian: true
+          from file:
+            filename: ./scales.nc
+            variable name: hz        
+        write:
+          filename: ./diffusion_hz.nc
+
+      - name: diffusion_vt
+        vertical:
+          as gaussian: true
+          from file:
+            filename: ./scales.nc
+            variable name: vt
+        write:
+          filename: ./diffusion_vt.nc

@@ -1,0 +1,29 @@
+gridspec_filename: ./soca_gridspec.nc
+restart_filename: ./bkg/ocn.bkg.2019080112.nc
+mld_filename: ./bkg/ocn.mld.2019080112.nc
+
+output_filename: ./scales.nc
+output_variable_vt: vt
+output_variable_hz: hz
+
+# NOTE: all length scales are calculated as a Gaussian sigma.
+# (not a Gaspari-Cohn cuttoff as is used by other parts of SABER)
+
+# Vertical length scales are in units of number of levels. The default length is
+# VT_MIN. At the surface the length is equal to the mixed layer depth, and
+# linearly interpolates to VT_MIN at the bottom of the mixed layer. Values
+# larger than VT_MAX ar clipped to VT_MAX
+VT_MAX: 10
+VT_MIN: 1.5
+
+# Horizontal length scales are in units of meters. The scales are equal to
+# HZ_ROSSBY_MULT time the local Rossby radius. Any values less than
+# HZ_MIN_GRID_MULT times the local grid size are increased. Any values greater
+# than HZ_MAX are clipped to HZ_MAX.
+#
+# Note  that these scales are a little larger than what we would normally use
+# (for demonstration purpose only), in the real world you would probably want to
+# use 1.0 for the *_MULT parameters
+HZ_ROSSBY_MULT: 2
+HZ_MAX: 300000
+HZ_MIN_GRID_MULT: 2
