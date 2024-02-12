@@ -200,7 +200,13 @@ An important part of the background error covariance is the diagonal, i.e. the s
 - The `StdDev` SABER outer block (not covered here) that reads the standard deviations from a file.
 - The SOCA specific `BkgErrGODAS` variable change. This will (eventually) be generalized, and moved to the SABER repo as a SABER outer block.
 
-The `BkgErrGODAS` variable change calculates the diagonal of the background error parametrically based on the background temperature. (Travis, insert more details and plots on how this is calculated) In short, the errors are assumed to be the largest along the thermocline, where the `dT/dz` is the largest, and decreases with depth. At the surface, minimum temperature errors are precalculated and read in from a file. The salinity errors are assumed to be large in the mixed layer, and decrease with depth.
+The `BkgErrGODAS` variable change calculates the diagonal of the background error parametrically based on the background temperature. (Travis, insert more details and plots on how this is calculated) In short, the errors are assumed to be the largest along the thermocline, where the `dT/dz` is the largest, and decreases with depth. At the surface, minimum temperature errors are precalculated and read in from a file. The salinity errors are assumed to be large in the mixed layer, and decrease with depth. For example, temperature errors will be something like the following.
+
+| T stddev at lvl 0 | T stddev at lvl 35 |
+| :--: | :--: |
+| ![T stddev lvl 0](img/bkg_err_t_lvl0.png) | ![plus stddev, SSH](img/bkg_err_t_lvl35.png) |
+
+Enable the `BkgErrGODAS` block, rerun the dirac test, and look at the output.
 
 ```yaml
 linear variable change:
@@ -253,7 +259,7 @@ Enable the `ksshts` section of `BalanceSOCA` and you will then see that the T/S/
 | :--: | :--: |
 | ![](img/dirac_step3_t.png) | ![](img/dirac_step3_ssh.png) |
 
-The `kst` section should be left commented out. There are issues with it working correctly and we need to take a closer look at it. (And more importantly, it kept crashing for this tutorial, so there is a bug somewhere). The T/S balance is important in the tropics where there there is a well defined thermocline.
+The `kst` section should be left commented out. There are issues with it working correctly and we need to take a closer look at it. The T/S balance is important in the tropics where there there is a well defined thermocline. It doesn't work so well elsewhere.
 
 ---
 [Prev: Compiling](../README.md) | [Next: 3DVAR](../3dvar/README.md)

@@ -136,9 +136,9 @@ tar -xaf soca-tutorial.input_data.tgz
 The tutorial proceeds in several steps:
 
 1. [SOCA initialization](init/README.md)
-2. [3DVAR](3dvar/README.md) (🚧 documentation still being developed)
+2. [HofX and 3DVAR](3dvar/README.md)
 3. [3DEnVAR](letkf/README.md) (🚧 documentation still being developed)
 4. [LETKF](letkf/README.md) (🚧 documentation still being developed)
-5. [Advanced Topics]() (🚧 documentation still being developed)
+5. [Advanced Topics](advanced/README.md) (🚧 documentation still being developed)
 
-Afterward you should know everything you need to know to develop you own cycling experiment scripts to suit your own needs.
+Afterward you should know everything you need to know to develop you own cycling experiment scripts to suit your own needs. The tutorials do assumme you already have a working knowledge of variational and ensemble DA methods. General DA background information may be added at a later date.

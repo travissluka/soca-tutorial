@@ -1,0 +1,108 @@
+geometry:
+  geom_grid_file: ./soca_gridspec.nc
+  mom6_input_nml: ./mom_input.nml
+  fields metadata: ./fields_metadata.yml  
+
+initial condition:
+  read_from_file: 1
+  basename: ./bkg/
+  ocn_filename: ocn.bkg.2019080112.nc
+  date: &date 2021-08-01T00:00:00Z
+  state variables: [socn, tocn, ssh, hocn, mld, layer_depth]
+
+time window:
+  begin: 2021-08-01T00:00:00Z
+  length: PT24H
+
+forecast length: PT24H
+model:
+  name: PseudoModel
+  tstep: PT6H
+  states:
+  - read_from_file: 1
+    date: 2021-08-01T06:00:00Z
+    basename: ./bkg/
+    ocn_filename: ocn.bkg.2019080112.nc
+  - read_from_file: 1
+    date: 2021-08-01T12:00:00Z
+    basename: ./bkg/
+    ocn_filename: ocn.bkg.2019080112.nc
+  - read_from_file: 1
+    date: 2021-08-01T18:00:00Z
+    basename: ./bkg/
+    ocn_filename: ocn.bkg.2019080112.nc
+  - read_from_file: 1
+    date: 2021-08-02T00:00:00Z
+    basename: ./bkg/
+    ocn_filename: ocn.bkg.2019080112.nc
+
+observations:
+  observers:
+  
+  # insitu T/S profiles
+  - obs space:
+      name: insitu_ts
+      obsdatain:
+        engine:
+          type: H5File
+          obsfile: ./obs/20210801/obs.ocean_profile.20210801T120000Z.nc4
+      obsdataout:
+        engine:
+          type: H5File
+          obsfile: ./obs_out/hofx.ocean_profile.20210801T120000Z.nc4
+      simulated variables: [waterTemperature, salinity]          
+    obs operator:
+      name: Composite
+      components:
+      - name: InsituTemperature
+        variables:
+        - name: waterTemperature
+      - name: VertInterp
+        observation alias file: ./obsop_name_map.yml
+        variables:
+        - name: salinity
+        vertical coordinate: sea_water_depth
+        observation vertical coordinate: depth
+        interpolation method: linear
+    obs error:
+      covariance model: diagonal
+
+  # SST retrievals
+  - obs space:
+      name: sst_avhrr_metop-b
+      obsdatain:
+        engine:
+          type: H5File
+          obsfile: ./obs/20210801/obs.sst_avhrr_metop-b.20210801T120000Z.nc4
+      obsdataout:
+        engine:
+          type: H5File
+          obsfile: ./obs_out/hofx.sst_avhrr_metop-b.20210801T120000Z.nc4
+      simulated variables: [seaSurfaceTemperature]
+    obs operator:
+      name: Identity
+      observation alias file: ./obsop_name_map.yml
+    obs filters:
+    - filter: Bounds Check
+      minvalue: -1.8
+      maxvalue: 40.0
+
+  # Altimetry (ADT)
+  - obs space:
+      name: adt_c2
+      obsdatain:
+        engine:
+          type: H5File
+          obsfile: ./obs/20210801/obs.adt_c2.20210801T120000Z.nc4
+      obsdataout:
+        engine:
+          type: H5File
+          obsfile: ./obs_out/hofx.adt_c2.20210801T120000Z.nc4
+      simulated variables: [absoluteDynamicTopography]
+    obs operator:
+      name: ADT
+    obs filters:
+    - filter: Bounds Check
+      minvalue: -2.0
+      maxvalue: 2.0
+
