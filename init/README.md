@@ -19,15 +19,16 @@ These are tasks that are usually run a single time whenever setting up a new exp
 
 The following tutorial assumes you have already set up your environment, compiled soca, and downloaded the tutorial input data. ([See previous section](../README.md))
 
-Create a working directory within your main `soca-tutorial` directory and link in the required files
-
-```bash
-mkdir tutorial
-cd tutorial
-ln -s ../input_data/* .
-ln -s <PATH_TO_SOCA_BUILD_DIR>/bin/soca_* .
-cp ../init/files/* .
-```
+> [!IMPORTANT]
+> Within your main `soca-tutorial` directory perform the following actions to create the directories and link in the required files:
+>
+> ```bash
+> mkdir -p tutorial/init
+> cd tutorial/init
+> ln -s ../../input_data/* .
+> cp ../../init/files/* .
+> ln -s <PATH_TO_SOCA_BUILD_DIR>/bin/soca_{gridgen,error_covariance_toolbox}.x .
+> ```
 
 ## Grid Initialization
 
@@ -60,11 +61,12 @@ For this tutorial, and for any other case where the longest correlation length i
 
 The first step in calibrating the correlation operator is to generate the desired correlation lengths. An example Python script has been provided for this purpose (`calc_scales.py`) which will generate horizontal correlation lengths as a function of the Rossby radius and vertical correlation lengths as a function of the mixed layer depth. The Rossby radius has already been computed and is stored in `soca_gridspec.nc`, the mixed layer depth is given by the initial condition file.
 
-**Run the script:**
-
-```bash
-./calc_scales.py diffusion_setscales.yaml
-```
+> [!IMPORTANT]
+> Run the script to generate the length scales:
+>
+> ```bash
+> ./calc_scales.py diffusion_setscales.yaml
+> ```
 
 You can look at the resulting `scales.nc` file. You can notice that the vertical scales are deeper in the southern hemisphere, and shallow in the Northern hemisphere, which is appropriate for the date of the initial conditions (Aug 1).
 
@@ -91,11 +93,12 @@ The operator is split in this way so that the calculation of the horizontal diff
 
 Open the configuration file, `diffusion_parameters.yaml`, to see the structure of the yaml file. You'll notice that the vertical and horizontal parameters are specified and calculated separately as two distinct `group` items, and they use the scales that were generated in the previous step.
 
-Run the diffusion operator calibration, (replacing the `-n 10` with the actual number of cores you have available):
-
-```bash
-mpirun -n 10 ./soca_error_covariance_toolbox.x diffusion_parameters.yaml
-```
+> [!IMPORTANT]
+>  Run the diffusion operator calibration, replace `-n 10` with the actual number of cores you have available:
+>
+> ```bash
+> mpirun -n 10 ./soca_error_covariance_toolbox.x diffusion_parameters.yaml
+> ```
 
 For each group, the log file will display some important information. One important thing to note is how many iterations of the diffusion operator will be required. This is a function of the length scale and grid size, and the number of iterations required will be kept large enough in order to keep the system stable.
 
@@ -115,7 +118,10 @@ For real world scenarios you probably want to make sure that the number of itera
 
 One important task of the calibration step is to calculate the normalization weights. In order to do this in an efficient manner, a randomization technique is used to estimate the weights for the horizontal operator. A random vector is created, the diffusion operator is applied, and a running variance calculation is maintained to keep track of the estimated weights. You can see in the output file, `diffusion_hz.nc` that the weights are quite noisy with only 100 iterations.
 
-Open the `diffusion_parameters.yaml` configuration file, increase the randomization iterations to 20,000, and re-run the calibration step. You'll notice that calibration takes quite a bit longer now, but the resulting normalization weights are a lot smoother.
+> [!IMPORTANT]
+> Open the `diffusion_parameters.yaml` configuration file, increase the randomization iterations to 20,000, and re-run the calibration step.
+
+You'll notice that calibration takes quite a bit longer now, but the resulting normalization weights are a lot smoother.
 
 | randomization iterations: 100  | randomization iterations: 20,000|
 | :--: | :--: |
@@ -129,13 +135,14 @@ For length scales that are significantly longer than the grid cell size, it is b
 
 The following steps are not needed for running subsequent data assimilation cycles, but they are useful for illustrating what is happening with the background error covariance. The `soca_error_covariance_toolbox.x` executable can also be used to run a dirac test, whereby a single unit increment is created and the background error covariance is applied once. This allows us to see how the background error covariance is performing.
 
-Run:
-
-```bash
-mpirun -n 10 ./soca_error_covariance_toolbox.x dirac.yaml
-```
-
-and look at the `ocn.dirac_diffusion_SABER.an.2022-02-15T12:00:00Z.nc` output file
+> [!IMPORTANT]
+> Run the dirac test:
+>
+> ```bash
+> mpirun -n 10 ./soca_error_covariance_toolbox.x dirac.yaml
+> ```
+>
+> and look at the `ocn.dirac_diffusion_SABER.an.2022-02-15T12:00:00Z.nc` output file.
 
 ### Identity static B
 
@@ -157,6 +164,9 @@ If you look at the output, and squint, you'll see grid cells with a value of 1.0
 ### Enabling Diffusion Operator
 
 The first step is to enable the spatial correlation operator, here we'll enable the explicit diffusion that we already initialized.
+
+> [!IMPORTANT]
+> modify `dirac.yaml` and uncomment the following section, then rerun `soca_error_covariance_toolbox.x`
 
 ```yaml
 background error:
@@ -191,7 +201,8 @@ Now when you look at the output you'll see a nice smooth 3D correlation for the 
 
 In the configuration file, `ssh` is in a separate group than the other variables. Usually `ssh` is defined with a correlation length that is a little larger than the other variables.
 
-> As a separate exercise, try to run another horizontal calibration with a larger scale, and use that file for `ssh` here.
+> [!TIP]
+> (optional) Run another horizontal calibration with a larger scale, and use that file for `ssh` and see the difference in the dirac test
 
 ### Enabling Standard Deviation
 
@@ -206,7 +217,8 @@ The `BkgErrGODAS` variable change calculates the diagonal of the background erro
 | :--: | :--: |
 | ![T stddev lvl 0](img/bkg_err_t_lvl0.png) | ![plus stddev, SSH](img/bkg_err_t_lvl35.png) |
 
-Enable the `BkgErrGODAS` block, rerun the dirac test, and look at the output.
+> [!IMPORTANT]
+> Modify `dirac.yaml` and uncomment the following `BkgErrGODAS` block, rerun the `soca_error_covariance_toolbox.x`, and look at the output.
 
 ```yaml
 linear variable change:
@@ -227,11 +239,11 @@ linear variable change:
     ssh_phi_ex: 20 # lat of transition from extratropics
 ```
 
+The magnitude of the increments now vary spatially. Note that these are the standard deviations for the "unbalanced" S and SSH (see next section)
+
 | plus stddev: T | plus stddev: SSH |
 | :--: | :--: |
 | ![plus stddev, T](img/dirac_step2_t.png) | ![plus stddev, SSH](img/dirac_step2_ssh.png) |
-
-The size of the increments now vary spatially. Note that these are the standard deviations for the "unbalanced" S and SSH (see next section)
 
 ### Enabling vertical balance
 
@@ -247,6 +259,9 @@ The main balance we'll show here is the one connecting SSH with the density in t
 
 $$ \delta \eta_B = - \int^0_{bottom}{\frac{\delta\rho(T,S,z)}{\rho_0}dz}$$
 
+> [!IMPORTANT]
+> Modify `dirac.yaml` and uncomment the following `BalanceSOCA` block, rerun the `soca_error_covariance_toolbox.x`, and look at the output.
+
 ```yaml
 - linear variable change name: BalanceSOCA
   ksshts:
@@ -260,6 +275,9 @@ Enable the `ksshts` section of `BalanceSOCA` and you will then see that the T/S/
 | ![](img/dirac_step3_t.png) | ![](img/dirac_step3_ssh.png) |
 
 The `kst` section should be left commented out. There are issues with it working correctly and we need to take a closer look at it. The T/S balance is important in the tropics where there there is a well defined thermocline. It doesn't work so well elsewhere.
+
+> [!TIP]
+> You probabably don't want to use the T/S balance (yet) in real uses, but you can go ahead and enable the T/S balance here, re-run the dirac test, and look at the results.
 
 ---
 [Prev: Compiling](../README.md) | [Next: 3DVAR](../3dvar/README.md)

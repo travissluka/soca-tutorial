@@ -1,0 +1,43 @@
+geometry: &geom
+  geom_grid_file: ./soca_gridspec.nc
+  mom6_input_nml: ./mom_input.nml
+  fields metadata: ./fields_metadata.yml
+
+background:
+  read_from_file: 1
+  basename: ./bkg/
+  date: &date 2022-02-15T12:00:00Z
+  ocn_filename: ocn.bkg.2019080112.nc
+  state variables: [tocn]
+
+background error:
+  covariance model: SABER
+  saber central block:
+    saber block name: BUMP_NICAS
+    calibration:
+      io:
+        data directory: ./
+        files prefix: nicas_loc
+      drivers:
+        multivariate strategy: duplicated
+        compute nicas: true
+        write local nicas: true
+      nicas:
+        #> Check the log, and make sure this is larger than nc1max!
+        max horizontal grid size: 150000 
+        resolution: 8.0
+        explicit length-scales: true
+        horizontal length-scale:
+        - groups:
+          - common
+          value: 750e3 # meters
+        vertical length-scale:
+        # set the vertical length scale very large, (basically turning off
+        # vertical localization)
+        - groups:
+          - common
+          value: 5000 # number of levels
+      grids:
+      - model:
+          variables:
+          - tocn

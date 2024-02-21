@@ -9,11 +9,12 @@
     - [Testing](#testing)
   - [Tutorial Experiments](#tutorial-experiments)
 
-> ❗This tutorial is still a work in progress. When done, it will be transferred to the official JCSDA repos.
+>[!CAUTION]
+> This tutorial is still a work in progress. When done, it will be transferred to the official JCSDA repos.
 
 The Sea-ice, Ocean, and Coupled Assimilation interface (SOCA) is the MOM6 interface to JEDI. In addition to ocean, any variables that are on the MOM6 grid can be handled (sea-ice, biogeochemistry, etc.)
 
-This tutorial will help users to setup an environment on a supported machine, compile SOCA, and run a single cycle of various DA methods using provided scripts. It is up to the user to setup their own model configuration, and HPC cycling script, for their own experiments.
+This tutorial will help users to setup an environment on a supported machine, compile SOCA, and run a single cycle of various DA methods using provided scripts. It is up to the user to setup their own model configuration, and HPC cycling script, for their own experiments. It is also assumed that the user has a working knowledge of data assimilation, as high level explanations of the various DA methods are omitted.
 
 The two primary sources of additional documentation are updated quarterly with every release of JEDI, the latest releases are here:
 
@@ -81,7 +82,8 @@ required = true
 
 Each quarter, all of the individual JEDI repositories are tagged and tested, and a demonstration run (called [Skylab](https://skylab.jcsda.org) ) is performed. These stable tagged versions are available from the [jedi-bundle](https://github.com/JCSDA/jedi-bundle) repository.
 
-> ❗ The following instructions will use the latest tagged Skylab release to ensure the source code and environment are guaranteed to be working together. You can also build from the latest `develop` branches available on GitHub, but it is advised not to do this unless you are developing SOCA/JEDI code or for some reason need the latest version and can't wait for the next quarterly release.
+> [!WARNING]
+> The following instructions will use the latest tagged Skylab release to ensure the source code and environment are guaranteed to be working together. You can also build from the latest `develop` branches available on GitHub, but it is advised not to do this unless you are developing SOCA/JEDI code or for some reason need the latest version and can't wait for the next quarterly release.
 
 Get the latest release of the public JEDI bundle:
 
@@ -133,12 +135,20 @@ The files need for a single cycle of several DA methods are provided (observatio
 tar -xaf soca-tutorial.input_data.tgz
 ```
 
-The tutorial proceeds in several steps:
+The SOCA tutorial proceeds in several steps:
 
 1. [SOCA initialization](init/README.md)
 2. [HofX and 3DVAR](3dvar/README.md)
-3. [3DEnVAR](letkf/README.md) (🚧 documentation still being developed)
+3. [3DEnVAR](3denvar/README.md)
 4. [LETKF](letkf/README.md) (🚧 documentation still being developed)
 5. [Advanced Topics](advanced/README.md) (🚧 documentation still being developed)
 
 Afterward you should know everything you need to know to develop you own cycling experiment scripts to suit your own needs. The tutorials do assumme you already have a working knowledge of variational and ensemble DA methods. General DA background information may be added at a later date.
+
+Be sure to pay special attention to any sections in special colors:
+
+> [!IMPORTANT]
+> These purple sections of the tutorial require action on your part, be sure to do them in order!
+
+> [!TIP]
+> These green sections are optional actions on your part, you can skip them if you want

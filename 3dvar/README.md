@@ -25,19 +25,29 @@ This section of the tutorial will go over the basics of setting up a 3DVAR with 
 
 The following tutorial assumes you have already set up your environment, compiled SOCA, and run the initialization steps in the [previous section](../init/README.md).
 
-From within the tutorial directory you previously created, run the following commands to copy the sample yaml files for this section of the tutorial and setup the output directories:
+> [!IMPORTANT]
+> Within your main `soca-tutorial` directory perform the following actions to create the directories and link in the required files, including the initialized diffusion from the previous tutorial:
+>
+> ```bash
+> mkdir -p tutorial/3dvar
+> cd tutorial/3dvar
+> ln -s ../../input_data/* .
+> cp ../../3dvar/files/* .
+> ln -s ../init/diffusion_{hz,vt}.nc .
+> ln -s <PATH_TO_SOCA_BUILD_DIR>/bin/soca_{hofx3d,var}.x .
+> mkdir obs_out
+> ```
 
-```bash
-cp ../3dvar/files/* .
-mkdir obs_out
-```
+### Rerun diffusion calibration <!-- omit in toc -->
 
-### Rerun diffusion calibration (optional) <!-- omit in toc -->
+The length scales that were used in the previous section were a little larger than should be used, on purpose, in order to help visualize the dirac tests. To use length scales that are more realistic do the following:
 
-The length scales that were used in the previous section were a little larger than should be used, on purpose, in order to help visualize the dirac tests. To use length scales that are more realistic you may want to do the following:
-
-- change `diffusion_setscales.yaml` so that `HZ_ROSSBY_MULT: 1.0` and `HZ_MIN_GRID_MULT: 1.5`
-- rerun  `./calc_scales.py` and the diffusion calibration
+> [!TIP]
+> Rerun the diffusion calibration in the `tutorial/init` directory with smaller scales:
+>
+> - change `diffusion_setscales.yaml` so that `HZ_ROSSBY_MULT: 1.0` and `HZ_MIN_GRID_MULT: 1.5`
+> - rerun  `./calc_scales.py`
+> - rerun the diffusion calibration
 
 Note how there are fewer iterations of the diffusion operator required now (since the length scales are shorter). This will help the 3DVAR in this part of the tutorial run faster!
 
@@ -145,12 +155,13 @@ The [`Composite`](https://jointcenterforsatellitedataassimilation-jedi-docs.read
 | ![insitu observations](img/obs_insitu.png) |
 
 ### Output
-  
-Run the observation operators:
 
-```bash
-mpirun -n 10 ./soca_hofx3d.x hofx.yaml
-```
+> [!IMPORTANT]  
+> Run the observation operators:
+>
+> ```bash
+> mpirun -n 10 ./soca_hofx3d.x hofx.yaml
+> ```
 
 If you look at the output log, you'll notice several sections that let you know what is happening. There is an `H(x)` section that shows you the number of input observations that are valid for the given `time window`, as well as some statistics on the observation operator values that were calculated from the given background state.
 
@@ -210,11 +221,12 @@ cost function:
 
 The background error section looks similar to what was done in the previous section for the dirac tests (indicating a plain 3DVAR, and not a 3DEnVAR which will be covered in the next section), and the observations section should look similar to what was in the `hofx.yaml` configuration.
 
-Lets run the 3DVAR and see what happens:
-
-```bash
-mpirun -n 10 ./soca_var.x 3dvar.yaml
-```
+> [!IMPORTANT]
+> run the 3DVAR and see what happens:
+>
+> ```bash
+> mpirun -n 10 ./soca_var.x 3dvar.yaml
+> ```
 
 The output log contains some useful information. It has the same observation hofx and qc information that the hofx application produced. It also shows the final analysis and increment values, lets look at those to make sure everything is working:
 
@@ -256,6 +268,9 @@ It's time to add some basic QC to those observations!
 ### Quality Control filters
 
 For each observation space in the config file you can  enable one or more QC filters. These are the same filters that can be  enabled in the hofx application. There is a long list of filters available that can remove obs, change obs values, set or inflate obs errors, create derived variables, etc. You can read more about them in the [UFO obs filters](https://jointcenterforsatellitedataassimilation-jedi-docs.readthedocs-hosted.com/en/latest/inside/jedi-components/ufo/qcfilters/index.html) documentation. We'll look at 3 basic qc filters here. Enable these filters by uncommenting the appropriate lines in your `3dvar.yaml` file for the insitu TS observations.
+
+> [!IMPORTANT]
+> Enable the following sections of quality control filters in `3dvar.yaml`
 
 (If you're curious about how complicated QC filters could get, check out what we are currently using for the full set of QC for the insitu obs in [`ocean_profile.yaml`](./ocean_profile.yaml) !)
   
@@ -299,7 +314,16 @@ The [Background Check Filter](https://jointcenterforsatellitedataassimilation-je
 
 #### Rerun 3DVAR <!-- omit in toc -->
 
-If you rerun the var now with the QC filters in place, you'll see a much more reasonable analysis. The output log will indicate that additional TS observations are being rejected now by the filters, most notably quite a few observations are removed by the bounds check and are shown as "out of bounds" in the log:
+If you rerun the var now with the QC filters in place, you'll see a much more reasonable analysis.
+
+> [!IMPORTANT]
+> run the 3DVAR again, after having enabled the qc filters in `3dvar.yaml`
+>
+> ```bash
+> mpirun -n 10 ./soca_var.x 3dvar.yaml
+> ```
+
+ The output log will indicate that additional TS observations are being rejected now by the filters, most notably quite a few observations are removed by the bounds check and are shown as "out of bounds" in the log:
 
 ```text
 QC insitu_ts salinity: 1 missing values.
@@ -322,12 +346,13 @@ Turn on all the observations that are in `3dvar.yaml` and the results should loo
 
 Using the resulting analysis for the next forecast as part of a cycling system will be covered in a later tutorial. But, in short, you can either use the increment file to drive IAU for MOM6, or you can use the analysis file to replace the given state variables in the original background restart file. (The analysis file only contains the small number of variables used in the data assimilation, it does not contain all the variables needed for a MOM6 restart).
 
-#### ✨ Optional exercises <!-- omit in toc -->
-
-Add observations and the appropriate QC filters for the other observation files that are in `input_data/obs/` but are not yet included in `3dvar.yaml`. In order to add the ice concentration observations, you'll need to:
-
-- add ice to the background state
-- add the ice vars to the state, analysis variables, and the diffusion operator variables
+> [!TIP]
+> (optional) Here are some exercises to try on your own:
+>
+> Add observations and the appropriate QC filters for the other observation files that are in `input_data/obs/` but are not yet included in `3dvar.yaml`. In order to add the ice concentration observations, you'll need to:
+>
+> - add ice to the background state
+> - add the ice vars to the state, analysis variables, and the diffusion operator variables
 
 ### Convergence / Minimizer
 
@@ -366,9 +391,10 @@ If you parse the output and plot the cost function (J) over the iterations we ge
 
 ![cost function](img/cost_function.png)
 
-##### ✨ Optional Exercises <!-- omit in toc -->
-
-Add a second outer loop to the 3DVAR. (you can simply duplicate the existing outer loop). Make sure to name the increment output file to something different for the second loop, otherwise the increment from the first loop will be overwritten. Bonus points for plotting the cost function over the two outer loops.
+> [!TIP]
+> (optional) exercises you can try on you own:
+>
+> Add a second outer loop to the 3DVAR. (you can simply duplicate the existing outer loop). Make sure to name the increment output file to something different for the second loop, otherwise the increment from the first loop will be overwritten. Bonus points for plotting the cost function over the two outer loops.
 
 #### Minimizers
 
@@ -399,11 +425,12 @@ For example, for 30 iterations, you can see that `RPCG` uses much less memory an
 
 One variation on the previously shown 3DVAR is the 3DVAR-FGAT (**F**irst **G**uess at **A**ppriopriate **T**ime). This differs from the standard 3DVAR mainly in how the hofx is calculated. Instead of a single background at the center of the window, multiple background time slots can be given so that the hofx is calculated using the background time slot that is closest to the actual observation time. The ocean changes slowly, so if using short windows (e.g. 6 hrs) it's uncertain how much benefit FGAT would have, though it might be beneficial in the mixed layer where there is a strong diurnal signal, or with a high resolution grid.
 
-You can run 3DFGAT with the sample yaml given.
-
-```bash
-mpirun -n 10 ./soca_var.x 3dfgat.yaml
-```
+> [!TIP]
+> You can run 3DFGAT with the sample yaml given.
+>
+> ```bash
+> mpirun -n 10 ./soca_var.x 3dfgat.yaml
+> ```
 
 Looking inside the configuration file, to enable FGAT this with the variational application, you'll need to change the cost function type to:
 

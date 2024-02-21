@@ -1,0 +1,172 @@
+geometry: &geom
+  geom_grid_file: ./soca_gridspec.nc
+  mom6_input_nml: ./mom_input.nml
+  fields metadata: ./fields_metadata.yml
+  
+time window:
+  begin: 2021-08-01T00:00:00Z
+  length: PT24H
+
+background:
+  _ens_file: &ens_file
+    # common parameters for each of the states listed below
+    read_from_file: 1
+    basename: ./bkg_ens/
+    #remap_filename: data_static/72x35x25/restarts/MOM.res.nc
+    state variables: [socn, tocn, uocn, vocn, ssh, hocn]
+    date: &date 2021-08-01T12:00:00Z
+  members:
+  - <<: *ens_file
+    ocn_filename: ocn.bkg.2017070112.nc
+  - <<: *ens_file
+    ocn_filename: ocn.bkg.2017071512.nc
+  - <<: *ens_file
+    ocn_filename: ocn.bkg.2017080112.nc
+  - <<: *ens_file
+    ocn_filename: ocn.bkg.2017081512.nc
+  - <<: *ens_file
+    ocn_filename: ocn.bkg.2017090112.nc
+  - <<: *ens_file
+    ocn_filename: ocn.bkg.2018070112.nc
+  - <<: *ens_file
+    ocn_filename: ocn.bkg.2018071512.nc
+  - <<: *ens_file
+    ocn_filename: ocn.bkg.2018080112.nc
+  - <<: *ens_file
+    ocn_filename: ocn.bkg.2018081512.nc
+  - <<: *ens_file
+    ocn_filename: ocn.bkg.2018090112.nc
+  - <<: *ens_file
+    ocn_filename: ocn.bkg.2019070112.nc
+  - <<: *ens_file
+    ocn_filename: ocn.bkg.2019071512.nc
+  - <<: *ens_file
+    ocn_filename: ocn.bkg.2019080112.nc
+  - <<: *ens_file
+    ocn_filename: ocn.bkg.2019081512.nc
+  - <<: *ens_file
+    ocn_filename: ocn.bkg.2019083012.nc 
+
+observations:
+  observers:
+  - obs space:
+      name: sst_avhrr_metop-b
+      distribution:
+        name: Halo
+        halo size: 1000.0e3       
+      obsdatain:
+        engine:
+          type: H5File
+          obsfile: ./obs/20210801/obs.sst_avhrr_metop-c.20210801T120000Z.nc4
+      obsdataout:
+        engine:
+          type: H5File
+          obsfile: ./obs_out/letkf.sst_avhrr_metop-b.20210801T120000Z.nc4
+      simulated variables: [seaSurfaceTemperature]
+    obs operator:
+      name: Identity
+      observation alias file: ./obsop_name_map.yml
+    obs error:
+      covariance model: diagonal
+    obs localizations:
+    - localization method: Rossby
+      base value: 100.0e3
+      rossby mult: 1.0
+      min grid mult: 2.0
+      min value: 100.0e3
+      max value: 500.0e3   
+    obs filters:
+    - filter: Bounds Check
+      minvalue: -1.8
+      maxvalue: 40.0
+    - filter: Background Check
+      threshold: 4.0
+    - filter: Domain Check
+      where:
+      - variable: {name: ObsError/seaSurfaceTemperature}
+        minvalue: 0.001
+
+  - obs space:
+      name: adt_c2
+      distribution:
+        name: Halo
+        halo size: 1000.0e3      
+      obsdatain:
+        engine:
+          type: H5File
+          obsfile: ./obs/20210801/obs.adt_c2.20210801T120000Z.nc4
+      obsdataout:
+        engine:
+          type: H5File
+          obsfile: ./obs_out/letkf.adt_c2.20210801T120000Z.nc4
+      simulated variables: [absoluteDynamicTopography]
+    obs operator:
+      name: ADT
+    obs error:
+      covariance model: diagonal
+    obs localizations:
+    - localization method: Rossby
+      base value: 100.0e3
+      rossby mult: 1.0
+      min grid mult: 2.0
+      min value: 100.0e3
+      max value: 500.0e3
+    obs filters:
+    - filter: Bounds Check
+      minvalue: -2.0
+      maxvalue: 2.0
+    - filter: Domain Check
+      where:
+      - variable: {name: GeoVaLs/sea_floor_depth_below_sea_surface}
+        minvalue: 2000     
+    - filter: Background Check
+      threshold: 4.0   
+      
+local ensemble DA:
+  solver: LETKF
+  inflation:
+    rtps: 0.9
+    # rtpp: 0.6
+    # mult: 1.1
+
+driver:
+  # background mean and variance
+  save prior mean: true
+  save prior variance: true
+
+  # analysis mean, increment, and variance
+  do posterior observer: true
+  save posterior mean increment: true
+  save posterior mean: true
+  save posterior variance: true
+
+output:
+  datadir: ana_ens/
+  date: *date
+  exp: letkf
+  type: ens
+
+# the following is only used if "driver. save posterior mean increment" is true
+output increment:
+  datadir: ./
+  date: *date
+  exp: letkf
+  type: incr
+
+output mean prior:
+  datadir: ./
+  date: *date
+  exp: letkf_mean
+  type: fc
+
+output variance prior:
+  datadir: ./
+  date: *date
+  exp: letkf_variance
+  type: fc
+
+output variance posterior:
+  datadir: ./
+  date: *date
+  exp: letkf_variance
+  type: an
