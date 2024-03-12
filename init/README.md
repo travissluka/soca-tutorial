@@ -68,7 +68,7 @@ The first step in calibrating the correlation operator is to generate the desire
 > ./calc_scales.py diffusion_setscales.yaml
 > ```
 
-You can look at the resulting `scales.nc` file. You can notice that the vertical scales are deeper in the southern hemisphere, and shallow in the Northern hemisphere, which is appropriate for the date of the initial conditions (Aug 1).
+You can look at the resulting `scales.nc` file. You should notice that the vertical scales are deeper in the southern hemisphere, and shallow in the Northern hemisphere, which is appropriate for the date of the initial conditions (Aug 1). (Note: your vertical scales will look different. The plot shown is without any clipping to the size of the vertical scales. However, the resulting values of >50 are too large for explicit diffusion to be efficient, so they are clipped to 10 levels in the given configuration file. )
 
 | hz scales (0-300km) | vt scales (0-50 lvls) |
 | :--: | :--: |
@@ -94,11 +94,13 @@ The operator is split in this way so that the calculation of the horizontal diff
 Open the configuration file, `diffusion_parameters.yaml`, to see the structure of the yaml file. You'll notice that the vertical and horizontal parameters are specified and calculated separately as two distinct `group` items, and they use the scales that were generated in the previous step.
 
 > [!IMPORTANT]
->  Run the diffusion operator calibration, replace `-n 10` with the actual number of cores you have available:
+> Run the diffusion operator calibration, replace `-n 10` with the actual number of cores you have available:
 >
 > ```bash
 > mpirun -n 10 ./soca_error_covariance_toolbox.x diffusion_parameters.yaml
 > ```
+>
+> (Note, if you run with too few cores, you'll have to adjust `domains_stack_size` in the `mom_input.nml` configuration file to something larger)
 
 For each group, the log file will display some important information. One important thing to note is how many iterations of the diffusion operator will be required. This is a function of the length scale and grid size, and the number of iterations required will be kept large enough in order to keep the system stable.
 
