@@ -127,6 +127,10 @@ make -j 5
 
 Assuming SOCA compiled correctly, you should be able to run the ctests, which are simple tests using a 5 degree ocean grid. See the notes [here](https://jointcenterforsatellitedataassimilation-jedi-docs.readthedocs-hosted.com/en/7.0.0/using/running_skylab/HPC_users_guide.html) about obtaining a compute node before running the tests. Assuming you are within the `build/soca` directory, running `ctest` will only run the tests for SOCA (there are hundreds of other tests for the other JEDI components that you probably don't care about)
 
+If for some reason a test fails, you can rerun a given test and view the output with `ctest -R <test name> -V`.
+
+If for some reason ALL of the tests fail, it's possible that the data files were not downloaded correctly with git lfs, double check to make sure git lfs was setup correctly. (Look at the netCDF files in `./soca/test/Data/` they should be actual netCDF files, not tet files describing which data file git lfs should download.)
+
 ## Tutorial Experiments
 
 The files need for a single cycle of several DA methods are provided (observations, background, static files, and yaml configurations). To get the binary data, download the input data from our [Google drive here](https://drive.google.com/uc?export=download&id=15dpIwXWXU72hYQy-wGLuYnrVB-J0eIb4) . Unpack the file with the following command and you should now have a `soca-tutorial/input_data` directory.
