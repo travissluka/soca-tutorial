@@ -18,14 +18,14 @@ This tutorial will help users to setup an environment on a supported machine, co
 
 The two primary sources of additional documentation are updated quarterly with every release of JEDI, the latest releases are here:
 
-- [JEDI read-the-docs v7](https://jointcenterforsatellitedataassimilation-jedi-docs.readthedocs-hosted.com/en/7.0.0/)
-- [spack-stack v1.5.1](https://spack-stack.readthedocs.io/en/1.5.1/index.html)
+- [JEDI read-the-docs v8](https://jointcenterforsatellitedataassimilation-jedi-docs.readthedocs-hosted.com/en/8.0.0/)
+- [spack-stack v1.7.0](https://spack-stack.readthedocs.io/en/1.7.0/index.html)
 
 ## Setting up Environment
 
 The build environment is handled by `spack-stack`, which contains all the libraries needed to compile JEDI and UFS code. Fortunately, on the main HPCs that we use, `spack-stack` has already been compiled and is available as a set of modules.
 
-Load the environment for your given HPC per the [spack-stack hpc module instructions](https://spack-stack.readthedocs.io/en/1.5.1/PreConfiguredSites.html#pre-configured-sites-tier-1).
+Load the environment for your given HPC per the [spack-stack hpc module instructions](https://spack-stack.readthedocs.io/en/1.7.0/PreConfiguredSites.html#pre-configured-sites-tier-1).
 
 For example, for the GNU compiler on Orion, you would run the following
 
@@ -34,12 +34,11 @@ module purge
 module use /work/noaa/epic/role-epic/spack-stack/orion/modulefiles
 module load python/3.9.2
 module load ecflow/5.8.4
-module load mysql/8.0.31
 
-module use /work/noaa/epic/role-epic/spack-stack/orion/spack-stack-1.5.1/envs/unified-env/install/modulefiles/Core
+module use /work/noaa/epic/role-epic/spack-stack/orion/spack-stack-1.7.0/envs/ue-gcc-centos/install/modulefiles/Core
 module load stack-gcc/10.2.0
 module load stack-openmpi/4.0.4
-module load stack-python/3.10.8
+module load stack-python/3.10.13
 ```
 
 You'll then load the modules specific for the SOCA environment
@@ -47,6 +46,7 @@ You'll then load the modules specific for the SOCA environment
 ```bash
 module load soca-env
 module load fms/release-jcsda
+module load sp
 ```
 
 last, depending on which machine you're on, you'll probably require the following commands
@@ -71,10 +71,10 @@ git lfs install
 This only needs to be done once on any given machine. Double check in your home directory that you have a file `~/.gitconfig` that contains an `lfs` section, such as
 
 ```Git Config
-[filter "lfs"]  
-clean = git-lfs clean -- %f  
-smudge = git-lfs smudge -- %f  
-process = git-lfs filter-process  
+[filter "lfs"]
+clean = git-lfs clean -- %f
+smudge = git-lfs smudge -- %f
+process = git-lfs filter-process
 required = true
 ```
 
@@ -88,7 +88,7 @@ Each quarter, all of the individual JEDI repositories are tagged and tested, and
 Get the latest release of the public JEDI bundle:
 
 ```bash
-git clone https://github.com/JCSDA/jedi-bundle -b release/skylab-v7
+git clone https://github.com/JCSDA/jedi-bundle -b release/skylab-v8
 ```
 
 This bundle will pull the individual repositories for everything JEDI related. Since you only want to use SOCA, you can comment a couple of things out to make everything compile faster. You'll see a `CMakeLists.txt` file, and in that file near the end are several `ecbuild_bundle( PROJECT ...` lines, comment out the ones that we don't need for SOCA:
@@ -114,9 +114,17 @@ Hopefully there were no errors at this point. If there are, it's possible that t
 
 ### Compiling
 
-Be sure to check the JEDI documentation for any specific compilation instructions for your machine. For example, some HPCs have memory limits on the login nodes that interfere with compiling, so it is suggested to [grab a compute node](https://jointcenterforsatellitedataassimilation-jedi-docs.readthedocs-hosted.com/en/7.0.0/using/running_skylab/HPC_users_guide.html) on those machines for compiling.
+Be sure to check the JEDI documentation for any specific compilation instructions for your machine. For example, some HPCs have memory limits on the login nodes that interfere with compiling, so it is suggested to [grab a compute node](https://jointcenterforsatellitedataassimilation-jedi-docs.readthedocs-hosted.com/en/8.0.0/using/running_skylab/HPC_users_guide.html) on those machines for compiling.
 
-You'll want to `cd` into the soca build directory, otherwise a lot of other executables that soca doesn't need will get build (e.g. OOPS toy models and tests)
+You'll want to `cd` into the soca build directory, otherwise a lot of other executables
+that soca doesn't need will get build (e.g. OOPS toy models and tests)
+
+> [!WARNING]
+> There is currently a bug in the cmake for SOCA where `mom6.x` is not getting
+> detected as a dependency and so is not build automatically when you build
+> after `cd` into the `soca` directory. `mom6.x` is needed for the ctests to
+> run. Either run `make` from the root of the build directory so that everything
+> gets built, or also `cd` into the `mom6` directory and run `make` there.
 
 ```bash
 cd soca
@@ -125,7 +133,7 @@ make -j 5
 
 ### Testing
 
-Assuming SOCA compiled correctly, you should be able to run the ctests, which are simple tests using a 5 degree ocean grid. See the notes [here](https://jointcenterforsatellitedataassimilation-jedi-docs.readthedocs-hosted.com/en/7.0.0/using/running_skylab/HPC_users_guide.html) about obtaining a compute node before running the tests. Assuming you are within the `build/soca` directory, running `ctest` will only run the tests for SOCA (there are hundreds of other tests for the other JEDI components that you probably don't care about)
+Assuming SOCA compiled correctly, you should be able to run the ctests, which are simple tests using a 5 degree ocean grid. See the notes [here](https://jointcenterforsatellitedataassimilation-jedi-docs.readthedocs-hosted.com/en/8.0.0/using/running_skylab/HPC_users_guide.html) about obtaining a compute node before running the tests. Assuming you are within the `build/soca` directory, running `ctest` will only run the tests for SOCA (there are hundreds of other tests for the other JEDI components that you probably don't care about)
 
 If for some reason a test fails, you can rerun a given test and view the output with `ctest -R <test name> -V`.
 
