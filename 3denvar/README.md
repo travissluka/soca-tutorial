@@ -34,10 +34,14 @@ The following tutorial assumes that you have already set up your environment, co
 
 ## Initialize BUMP_NICAS for localization
 
-The localization method for the 3DEnVAR, can be either `BUMP_NICAS` or `EXPLICIT_DIFFUSION` (similar to the choice of correlation model used for the static background error covariance). As discussed previously in the [background error initialization](../init/README.md#background-error-initialization), `BUMP_NICAS` is preferable when using long length scales, and `EXPLICIT_DIFFUSION` is preferable when using short length scales.
-
-> [!WARNING]
-> At this time, only `BUMP_NICAS` works for localization with SOCA, `EXPLICIT_DIFFUION` will be working in the next quarterly release.
+The localization method for the 3DEnVAR, can be either `BUMP_NICAS` or
+`EXPLICIT_DIFFUSION` (similar to the choice of correlation model used for the
+static background error covariance). As discussed previously in the [background
+error initialization](../init/README.md#background-error-initialization),
+`BUMP_NICAS` is preferable when using long length scales, and
+`EXPLICIT_DIFFUSION` is preferable when using short length scales. Since we
+often want localization length scales to be longer than correlation length
+scales, `BUMP_NICAS` is often a good choice here.
 
 The `nicas_parameters.yaml` file has already been prepared for you. There are some differences when calibrating  NICAS for localization compared with using it for correlation. You'll notice the following setting:
 
@@ -88,7 +92,7 @@ Another important thing to note is the NICAS subgrid resolution. The number of s
 
 ```text
 Info     :                 Estimated nc1 from horizontal support radius:   106809
-Warning  : in nicas_cmp_compute_horizontal: required nc1 larger than nc1max, resetting to nc1max  
+Warning  : in nicas_cmp_compute_horizontal: required nc1 larger than nc1max, resetting to nc1max
 ```
 
 The parameters given in the configuration file for this tutorial should be fine as is.
@@ -114,7 +118,7 @@ We will be using the `dirac.yaml` configuration file, which has already been set
     localization:
       localization method: SABER
       saber central block:
-        saber block name: BUMP_NICAS      
+        saber block name: BUMP_NICAS
         ...
 ```
 
@@ -136,13 +140,46 @@ Two output files will be produced. First, look at `ocn.dirac_ens_ensemble.an.202
 Look at the other output file, `ocn.dirac_ens_ensemble_localization.an.2022-02-15T12:00:00Z.nc`. This files shows the ensemble localization that was used to calculate the above increments.
 
 | localization|
-| :--: | 
+| :--: |
 | ![localization ](img/dirac_ens_loc.png) |
 
 You'll notice that the localization near Central America crosses from the Pacific into the Atlantic. It is possible when calibrating NICAS to enforce the use of the land mask to prevent this. However, in reality, this cross-basin impact is not as big of a concern for localization than it is for the correlation operator, so we usually skip the added cost required from imposing the land mask.
 
 > [!TIP]
 > (Optional Exercise) Try decreasing the number of ensemble members in the background error covariance to just 5 and see how the resulting diracs get noisier. This shows the importance of having a large enough ensemble to have meaningful cross-variable and spatial correlations.
+
+> [!TIP]
+> (Optional Exercise) As of Skylab v8, `EXPLICIT_DIFFUSION` can also be
+> used for localization! This may be useful if you have few ensemble members and
+> need localization lengths that are still close to the Rossby radius
+> correlation lengths. Re-run the above the above dirac test and swap the
+> `BUMP_NICAS` central block for the `EXPLICIT_DIFFUSION` central block. (look
+> at what is done in the [SOCA 3dhyb
+> ctest](https://github.com/JCSDA/soca/blob/develop/test/testinput/3dhyb_diffusion.yml#L110)
+> for an example. Some things you'll need to add to your yaml:
+>
+> - **duplicated multivariate strategy**: Same concept as with `BUMP_NICAS`
+>   localization is combined for the given variables.
+> - **duplicated vertical strategy**: Since `EXPLICIT_DIFFUSION` does not work
+>   well with long length scales, we can't just use a very large number to "turn
+>   off" vertical localization (like we did with `BUMP_NICAS`). Instead we
+>   specify a duplicated vertical strategy in place of actual diffusion to copy
+>   the localization across the vertical levels.
+>
+> The above will result in a yaml that will look something like the following
+> inside the `EXPLICIT_DIFFUSION` section of your localization:
+>
+> ```yaml
+> ...
+> read:
+>   groups:
+>   - name: group1
+>     multivariate strategy: duplicated
+>     horizontal:
+>       filename: ./diffusion_hz.nc
+>     vertical:
+>       strategy: duplicated
+> ```
 
 ### 3DEnVAR Run
 
@@ -189,7 +226,7 @@ OOPS provides the `hybrid` covariance model that can be used to combine any numb
       covariance:
         covariance model: SABER
         # <copy the static B covariance settings from the 3DVAR>
-        ... 
+        ...
     ...
 ```
 
@@ -240,7 +277,7 @@ The following yaml snippet provides an example of what needs to be changed, (ass
 - the `background` now reads in multiple states, one state dated at the center of each subwindow.
 - the ensemble portion of the `background error` covariance now includes 4D states (a state for each subwindow of each ensemble member)
 
- 
+
 ```yaml
 cost function:
   cost type: 4D-Ens-Var
@@ -249,7 +286,7 @@ cost function:
     length: PT24H
   subwindow: PT12H
   parallel subwindows: false
-  
+
   # Background at center of each subwindow
   background:
     states:
