@@ -12,6 +12,14 @@
 >[!CAUTION]
 > This tutorial is still a work in progress. When done, it will be transferred to the official JCSDA repos.
 
+>[!CAUTION] TODO - change when released
+> NOTE that this a `develop` version of the tutorial that is meant to be used
+> with a non-release version of the JEDI bundle from Travis'
+> personal fork on github, [travissluka/jedi-bundle:
+> release/soca](https://github.com/travissluka/jedi-bundle/tree/release/soca).
+> The rest of the documentation has not been reflected to show this. Check with
+> Travis that you are using the right version of things!
+
 The Sea-ice, Ocean, and Coupled Assimilation interface (SOCA) is the MOM6 interface to JEDI. In addition to ocean, any variables that are on the MOM6 grid can be handled (sea-ice, biogeochemistry, etc.)
 
 This tutorial will help users to setup an environment on a supported machine, compile SOCA, and run a single cycle of various DA methods using provided scripts. It is up to the user to setup their own model configuration, and HPC cycling script, for their own experiments. It is also assumed that the user has a working knowledge of data assimilation, as high level explanations of the various DA methods are omitted.
@@ -32,12 +40,11 @@ For example, for the GNU compiler on Orion, you would run the following
 ```bash
 module purge
 module use /work/noaa/epic/role-epic/spack-stack/orion/modulefiles
-module load python/3.9.2
 module load ecflow/5.8.4
 
-module use /work/noaa/epic/role-epic/spack-stack/orion/spack-stack-1.7.0/envs/ue-gcc-centos/install/modulefiles/Core
-module load stack-gcc/10.2.0
-module load stack-openmpi/4.0.4
+module use /work/noaa/epic/role-epic/spack-stack/orion/spack-stack-1.7.0/envs/ue-gcc/install/modulefiles/Core
+module load stack-gcc/12.2.0
+module load stack-openmpi/4.1.6
 module load stack-python/3.10.13
 ```
 
@@ -45,7 +52,7 @@ You'll then load the modules specific for the SOCA environment
 
 ```bash
 module load soca-env
-module load fms/release-jcsda
+module load fms
 module load sp
 ```
 
