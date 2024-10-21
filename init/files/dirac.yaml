@@ -9,32 +9,34 @@ background:
   date: &date 2022-02-15T12:00:00Z
   ocn_filename: ocn.bkg.2019080112.nc
 
-  state variables: &soca_vars [tocn, socn, ssh, hocn, mld, layer_depth]
+  state variables: &soca_vars
+  - sea_water_potential_temperature
+  - sea_water_salinity
+  - sea_surface_height_above_geoid
+  - sea_water_cell_thickness
+  - ocean_mixed_layer_thickness
+  - sea_water_depth
 
 background error:
   covariance model: SABER
   saber central block:
 # # step 1, comment out the ID block and enable the EXPLICIT_DIFFUSION block instead
-    saber block name: ID 
-#     saber block name: EXPLICIT_DIFFUSION
-#     active variables: [tocn, socn, ssh]
-#     geometry: *geom
-#     group mapping:
-#     - name: group1
-#       variables: [tocn, socn]
-#     - name: group2
-#       variables: [ssh]
-#     read:
-#       groups:
-#       - name: group1
-#         multivariate strategy: univariate
-#         horizontal:
-#           filename: ./diffusion_hz.nc
-#         vertical:
-#           filename: ./diffusion_vt.nc
-#       - name: group2
-#         horizontal:       
-#           filename: ./diffusion_hz.nc
+    saber block name: ID
+    # saber block name: diffusion
+    # read:
+    #   groups:
+    #   - variables:
+    #     - sea_water_potential_temperature
+    #     - sea_water_salinity
+    #     horizontal:
+    #       filepath: ./diffusion_hz
+    #     vertical:
+    #       levels: 75
+    #       filepath: ./diffusion_vt
+    #   - variables:
+    #     - sea_surface_height_above_geoid
+    #     horizontal:
+    #       filepath: ./diffusion_hz
 
 # # step 2, enable the linear variable change section, including BkgErrGODAS
 #   linear variable change:
@@ -63,7 +65,7 @@ background error:
 #       #   dtdzmin: 1.0e-6
 #       #   nlayers: 100
 
-     
+
 dirac:
   # unit increments to use for the dirac test
   ixdir: [131, 214, 172]  # the x coordinate

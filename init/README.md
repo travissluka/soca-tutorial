@@ -5,7 +5,7 @@
   - [Grid Initialization](#grid-initialization)
   - [Background Error Initialization](#background-error-initialization)
     - [Generating Lengthscales](#generating-lengthscales)
-    - [EXPLICIT\_DIFFUSION Calibration](#explicit_diffusion-calibration)
+    - [`diffusion` Calibration](#diffusion-calibration)
     - [BUMP\_NICAS Calibration](#bump_nicas-calibration)
   - [Dirac Test (optional)](#dirac-test-optional)
     - [Identity static B](#identity-static-b)
@@ -17,7 +17,16 @@ These are tasks that are usually run a single time whenever setting up a new exp
 
 ## Set up work directory
 
-The following tutorial assumes you have already set up your environment, compiled soca, and downloaded the tutorial input data. ([See previous section](../README.md))
+The following tutorial assumes you have already set up your environment,
+compiled soca, and downloaded the tutorial input data. ([See previous
+section](../README.md))
+
+>[!CAUTION] TODO - change when released
+> Note that the input data tar file has not been updated yet
+> (`fields_metadata.yml` should be removed). As a workaround for
+> the following steps, after doing `ln -s ../../input_data/* .` you should `rm
+> fields_metadata.yml`. This way, the `fields_metadata.yml` file will correctly
+> from this repos' `init/files/` directory.
 
 > [!IMPORTANT]
 > Within your main `soca-tutorial` directory perform the following actions to create the directories and link in the required files:
@@ -53,10 +62,10 @@ Where
 The background error used in the 3DVAR and 3DEnVAR, as well as the localization used in the 3DEnVAR will require the spatial correlation operator ($\mathbf{C}$) to be initialized ("calibrated") before it is used. This is often a slow process, so it is done once before doing any cycling experiments. There are two options for "saber central blocks" that provide a spatial correlation operator:
 
 - `BUMP_NICAS` This lives in the `SABER` repository and is a generic operator that works for any of the model interfaces. Given the way it works, it is best suited for cases where the correlation lengths are much larger than the grid cells. Documentation can be found [here](https://jointcenterforsatellitedataassimilation-jedi-docs.readthedocs-hosted.com/en/latest/inside/jedi-components/saber/BUMP_saber_blocks.html#bump-nicas-saber-block).
-- `EXPLICIT_DIFFUSION` This (for now) is a SOCA specific saber central block (but will be moved into the SABER repository in the near future). It implements the (explicit equation) Weaver et al. style of a normalized diffusion operator. Since it is explicitly timestepped, it works best for short correlation lengths, compared with the size of a grid cell. The person who wrote this code has been too lazy to write documentation (yet).
-  
-For this tutorial, and for any other case where the longest correlation length is no more than an order of magnitude larger than the grid size, `EXPLICIT_DIFFUSION` should be your choice.
-  
+- `diffusion` This implements the (explicit equation) Weaver et al. style of a normalized diffusion operator. Since it is explicitly timestepped, it works best for short correlation lengths, compared with the size of a grid cell. The person who wrote this code has been too lazy to write documentation (yet).
+
+For this tutorial, and for any other case where the longest correlation length is no more than an order of magnitude larger than the grid size, `diffusion` should be your choice.
+
 ### Generating Lengthscales
 
 The first step in calibrating the correlation operator is to generate the desired correlation lengths. An example Python script has been provided for this purpose (`calc_scales.py`) which will generate horizontal correlation lengths as a function of the Rossby radius and vertical correlation lengths as a function of the mixed layer depth. The Rossby radius has already been computed and is stored in `soca_gridspec.nc`, the mixed layer depth is given by the initial condition file.
@@ -76,7 +85,7 @@ You can look at the resulting `scales.nc` file. You should notice that the verti
 
 If you open the configuration file, `diffusion_setscales.yaml`, you'll notice the parameters that are used to calculate the lengths. One key thing to notice is that the scales have a maximum imposed to keep the lengths from being too long. Remember, the explicit diffusion operator is most efficient with short scales (BUMP_NICAS is most efficient with long scales).
 
-### EXPLICIT_DIFFUSION Calibration
+### `diffusion` Calibration
 
 The explicit diffusion operator follows Weaver et al. and is implemented as a separable horizontal 2D and vertical 1D pair of diffusion operators.
 
@@ -107,7 +116,7 @@ For each group, the log file will display some important information. One import
 In our case here, the horizontal operator shows:
 
 ```yaml
-minimum iterations:   140 
+minimum iterations:   128
 ```
 
 And the vertical operator shows:
@@ -119,6 +128,25 @@ minimum iterations:   200
 For real world scenarios you probably want to make sure that the number of iterations stays below 200 or 300 for the horizontal operator, otherwise your DA will start going slower. You can get away with more iterations in the vertical operator without noticing as much performance penalty because no MPI communication is required for the vertical diffusion operator. MPI communication IS required for each iteration of the horizontal diffusion operator.
 
 One important task of the calibration step is to calculate the normalization weights. In order to do this in an efficient manner, a randomization technique is used to estimate the weights for the horizontal operator. A random vector is created, the diffusion operator is applied, and a running variance calculation is maintained to keep track of the estimated weights. You can see in the output file, `diffusion_hz.nc` that the weights are quite noisy with only 100 iterations.
+
+In order to view the contents of this file, it must first be converted from the
+generic unstructured atlas IO format, into a regular x/y file that SOCA normally
+produces.
+
+> [!IMPORTANT]
+> Run the following:
+> ```bash
+> ./convert_atlas_file.py diffusion_hz.nc diffusion_hz.conv.nc
+> ncview diffusion_hz.conv.nc
+> ```
+
+The `convert_atlas_file.py` script can be used to convert any of the files that
+are written with the OOPS generic unstructured file IO. (You can do the same
+with the vertical diffusion parameters)
+
+
+Now, try generating normalization weights with a more realistic number of
+randomization steps:
 
 > [!IMPORTANT]
 > Open the `diffusion_parameters.yaml` configuration file, increase the randomization iterations to 20,000, and re-run the calibration step.
@@ -132,7 +160,7 @@ You'll notice that calibration takes quite a bit longer now, but the resulting n
 ### BUMP_NICAS Calibration
 
 For length scales that are significantly longer than the grid cell size, it is better to use `BUMP_NICAS`. A tutorial section for this will be added in the future, but for now, if you're interested, you can look at the extensive [BUMP_NICAS documentation](https://jointcenterforsatellitedataassimilation-jedi-docs.readthedocs-hosted.com/en/latest/inside/jedi-components/saber/BUMP_saber_blocks.html#bump-nicas-saber-block).
-  
+
 ## Dirac Test (optional)
 
 The following steps are not needed for running subsequent data assimilation cycles, but they are useful for illustrating what is happening with the background error covariance. The `soca_error_covariance_toolbox.x` executable can also be used to run a dirac test, whereby a single unit increment is created and the background error covariance is applied once. This allows us to see how the background error covariance is performing.
@@ -174,25 +202,21 @@ The first step is to enable the spatial correlation operator, here we'll enable 
 background error:
   covariance model: SABER
   saber central block:
-    saber block name: EXPLICIT_DIFFUSION
-    active variables: [tocn, socn, ssh]
-    geometry: *geom
-    group mapping:
-    - name: group1
-      variables: [tocn, socn]
-    - name: group2
-      variables: [ssh]
+    saber block name: diffusion
     read:
       groups:
-      - name: group1
-        multivariate strategy: univariate
+      - variables:
+        - sea_water_potential_temperature
+        - sea_water_salinity
         horizontal:
-          filename: ./diffusion_hz.nc
+          filepath: ./diffusion_hz
         vertical:
-          filename: ./diffusion_vt.nc
-      - name: group2
-        horizontal:       
-          filename: ./diffusion_hz.nc
+          levels: 75
+          filepath: ./diffusion_vt
+      - variables:
+        - sea_surface_height_above_geoid
+        horizontal:
+          filepath: ./diffusion_hz
 ```
 
 Now when you look at the output you'll see a nice smooth 3D correlation for the increments (you should look at the vertical component as well). The increments are normalized with a maximum that is *close* to 1.0. It is not exactly 1.0 because our normalization weight initialization was an estimate, not exact, but close enough. Notice how the temperature increment near Central America "diffuses" along the coastline and does not cross it.

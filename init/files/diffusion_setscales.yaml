@@ -3,8 +3,11 @@ restart_filename: ./bkg/ocn.bkg.2019080112.nc
 mld_filename: ./bkg/ocn.mld.2019080112.nc
 
 output_filename: ./scales.nc
-output_variable_vt: vt
-output_variable_hz: hz
+# the following names are a temporary hack. The diffusion IO code uses the model
+# interface and so assumes that the variable names are one of the existing soca
+# variable names
+output_variable_vt: Temp # hack, just pick an existing 3D variable name
+output_variable_hz: ave_ssh # hack, just pick an existing 2D variable name
 
 # NOTE: all length scales are calculated as a Gaussian sigma.
 # (not a Gaspari-Cohn cuttoff as is used by other parts of SABER)

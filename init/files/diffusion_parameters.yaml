@@ -8,33 +8,37 @@ background:
   basename: ./bkg/
   date: &date 2022-02-15T12:00:00Z
   ocn_filename: ocn.bkg.2019080112.nc
-  state variables: [tocn, socn, uocn, vocn, ssh]
+  state variables:
+  - sea_water_potential_temperature
+  - sea_surface_height_above_geoid
 
 background error:
   covariance model: SABER
   saber central block:
-    saber block name: EXPLICIT_DIFFUSION
-    geometry: *geom
+    saber block name: diffusion
     calibration:
       normalization:
-        method: randomization
         iterations: 100       #< in the real world you'll want to use 1e4 or so
-
       groups:
-      - name: diffusion_hz
-        horizontal:
+      - horizontal:
           as gaussian: true
-          from file:
-            filename: ./scales.nc
-            variable name: hz        
+          model file:
+            date: *date
+            basename: ./
+            ocn_filename: scales.nc
+          model variable: sea_surface_height_above_geoid
+          # NOTE, that name ^ is a hack, it's not really ssh. The model
+          # interface just requires an existing 2D variable name
         write:
-          filename: ./diffusion_hz.nc
-
-      - name: diffusion_vt
-        vertical:
+          filepath: ./diffusion_hz
+      - vertical:
           as gaussian: true
-          from file:
-            filename: ./scales.nc
-            variable name: vt
+          model file:
+            date: *date
+            basename: ./
+            ocn_filename: scales.nc
+          model variable: sea_water_potential_temperature
+          # NOTE, that name ^ is a hack, it's not really ssh. The model
+          # interface just requires an existing 3D variable name
         write:
-          filename: ./diffusion_vt.nc
+          filepath: ./diffusion_vt
