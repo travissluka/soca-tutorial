@@ -1,14 +1,20 @@
 geometry:
   geom_grid_file: ./soca_gridspec.nc
   mom6_input_nml: ./mom_input.nml
-  fields metadata: ./fields_metadata.yml  
+  fields metadata: ./fields_metadata.yml
 
 initial condition:
   read_from_file: 1
   basename: ./bkg/
   ocn_filename: ocn.bkg.2019080112.nc
   date: &date 2021-08-01T00:00:00Z
-  state variables: [socn, tocn, ssh, hocn, mld, layer_depth]
+  state variables:
+  - sea_water_potential_temperature
+  - sea_water_salinity
+  - sea_surface_height_above_geoid
+  - sea_water_cell_thickness
+  - ocean_mixed_layer_thickness
+  - sea_water_depth
 
 time window:
   begin: 2021-08-01T00:00:00Z
@@ -38,7 +44,7 @@ model:
 
 observations:
   observers:
-  
+
   # insitu T/S profiles
   - obs space:
       name: insitu_ts
@@ -50,7 +56,7 @@ observations:
         engine:
           type: H5File
           obsfile: ./obs_out/hofx.ocean_profile.20210801T120000Z.nc4
-      simulated variables: [waterTemperature, salinity]          
+      simulated variables: [waterTemperature, salinity]
     obs operator:
       name: Composite
       components:

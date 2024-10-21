@@ -12,7 +12,8 @@
 >[!CAUTION]
 > This tutorial is still a work in progress. When done, it will be transferred to the official JCSDA repos.
 
->[!CAUTION] TODO - change when released
+>[!CAUTION]
+> <!--  TODO - change when released -->
 > NOTE that this a `develop` version of the tutorial that is meant to be used
 > with a non-release version of the JEDI bundle from Travis'
 > personal fork on github, [travissluka/jedi-bundle:

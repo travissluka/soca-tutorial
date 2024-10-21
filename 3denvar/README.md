@@ -35,11 +35,11 @@ The following tutorial assumes that you have already set up your environment, co
 ## Initialize BUMP_NICAS for localization
 
 The localization method for the 3DEnVAR, can be either `BUMP_NICAS` or
-`EXPLICIT_DIFFUSION` (similar to the choice of correlation model used for the
+`diffusion` (similar to the choice of correlation model used for the
 static background error covariance). As discussed previously in the [background
 error initialization](../init/README.md#background-error-initialization),
 `BUMP_NICAS` is preferable when using long length scales, and
-`EXPLICIT_DIFFUSION` is preferable when using short length scales. Since we
+`diffusion` is preferable when using short length scales. Since we
 often want localization length scales to be longer than correlation length
 scales, `BUMP_NICAS` is often a good choice here.
 
@@ -149,31 +149,31 @@ You'll notice that the localization near Central America crosses from the Pacifi
 > (Optional Exercise) Try decreasing the number of ensemble members in the background error covariance to just 5 and see how the resulting diracs get noisier. This shows the importance of having a large enough ensemble to have meaningful cross-variable and spatial correlations.
 
 > [!TIP]
-> (Optional Exercise) As of Skylab v8, `EXPLICIT_DIFFUSION` can also be
+> (Optional Exercise) `diffusion` can also be
 > used for localization! This may be useful if you have few ensemble members and
 > need localization lengths that are still close to the Rossby radius
 > correlation lengths. Re-run the above the above dirac test and swap the
-> `BUMP_NICAS` central block for the `EXPLICIT_DIFFUSION` central block. (look
+> `BUMP_NICAS` central block for the `diffusion` central block. (look
 > at what is done in the [SOCA 3dhyb
 > ctest](https://github.com/JCSDA/soca/blob/develop/test/testinput/3dhyb_diffusion.yml#L110)
 > for an example. Some things you'll need to add to your yaml:
 >
 > - **duplicated multivariate strategy**: Same concept as with `BUMP_NICAS`
 >   localization is combined for the given variables.
-> - **duplicated vertical strategy**: Since `EXPLICIT_DIFFUSION` does not work
+> - **duplicated vertical strategy**: Since `diffusion` does not work
 >   well with long length scales, we can't just use a very large number to "turn
 >   off" vertical localization (like we did with `BUMP_NICAS`). Instead we
 >   specify a duplicated vertical strategy in place of actual diffusion to copy
 >   the localization across the vertical levels.
 >
 > The above will result in a yaml that will look something like the following
-> inside the `EXPLICIT_DIFFUSION` section of your localization:
+> inside the `diffusion` section of your localization:
 >
 > ```yaml
 > ...
 > read:
 >   groups:
->   - name: group1
+>   - variables: ...
 >     multivariate strategy: duplicated
 >     horizontal:
 >       filename: ./diffusion_hz.nc
@@ -230,7 +230,7 @@ OOPS provides the `hybrid` covariance model that can be used to combine any numb
     ...
 ```
 
-For each covariance model you want to use, a fractional `weight` is provided (all weights *should* add up to 1.0, but they don't have to), along with the same type of covariance model configuration we have used previously for `SABER` NICAS/EXPLICIT_DIFFUSION or `ensemble`.
+For each covariance model you want to use, a fractional `weight` is provided (all weights *should* add up to 1.0, but they don't have to), along with the same type of covariance model configuration we have used previously for `SABER` NICAS_BUMP/diffusion or `ensemble`.
 
 A hybrid covariance can be especially useful to help strike a balance between the problems of limited capabilities of the parametric background error covariance, and the sampling error from limited ensemble size of the ensemble covariance. Here we have a 50% / 50% weighting, but typically you would want put more weight on the ensemble covariance as your ensemble size increases.
 

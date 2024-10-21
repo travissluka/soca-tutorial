@@ -1,4 +1,4 @@
-# SOCA HofX and 3DVAR 
+# SOCA HofX and 3DVAR
 
 - [SOCA HofX and 3DVAR](#soca-hofx-and-3dvar)
   - [Setup work directory](#setup-work-directory)
@@ -64,20 +64,23 @@ The `state` section specifies the background state, which variables should be lo
 There are several state variables listed. If you're curious about how the state variable names are mapped from the input restart files to what is in SOCA, and what is expected by other parts of JEDI such as UFO, look at the field mapping file (`fields_metadata.yml`). In short, the variables listed here are for:
 
 from the file given by `ice_filename`:
-- `cice` - sea ice concentration
-- `hicen` - sea ice thickness
-- `hsnon` - sea ice snow thickness
+
+- `sea_ice_category_area_fraction`
+- `sea_ice_category_thickness`
+- `sea_ice_category_snow_thickness`
 
 from the file given by `ocn_filename`:
-- `tocn` - ocean temperature
-- `socn` - ocean salinity
-- `ssh` - ocean surface height
-- `hocn` - ocean layer thickness
+
+- `sea_water_potential_temperature`
+- `sea_water_salinity`
+- `sea_surface_height_above_geoid`
+- `sea_water_cell_thickness`
 
 and the following fields, which are not directly present in the input files, but rather are calculated by SOCA, and are needed by some of the variable changes for now:
 
-- `mld` - mixed layer depth
-- `layer_depth` - model layer depth
+- `ocean_mixed_layer_thickness`
+- `sea_water_depth`
+
 
 Unused variables can be removed. For example, if you are only doing ocean DA, without sea ice, you can remove everything ice related from this list.
 
@@ -134,7 +137,7 @@ The [`Composite`](https://jointcenterforsatellitedataassimilation-jedi-docs.read
 - obs space:
     name: insitu_ts
     ...
-    simulated variables: [waterTemperature, salinity]          
+    simulated variables: [waterTemperature, salinity]
   obs operator:
     name: Composite
     components:
@@ -156,7 +159,7 @@ The [`Composite`](https://jointcenterforsatellitedataassimilation-jedi-docs.read
 
 ### Output
 
-> [!IMPORTANT]  
+> [!IMPORTANT]
 > Run the observation operators:
 >
 > ```bash
@@ -178,20 +181,20 @@ The log file will also present details on how many observations passed the quali
 
 ```text
 QC sst_avhrr_metop-b seaSurfaceSkinTemperature: 809406 rejected as processed but not assimilated.
-QC sst_avhrr_metop-b seaSurfaceSkinTemperature: 0 passed out of 809406 observations.                 
-QC sst_avhrr_metop-b seaSurfaceTemperature: 5 out of bounds.                                         
-QC sst_avhrr_metop-b seaSurfaceTemperature: 34203 H(x) failed.                                       
-QC sst_avhrr_metop-b seaSurfaceTemperature: 775198 passed out of 809406 observations.                
-QC adt_c2 absoluteDynamicTopography: 81 out of bounds.                                               
-QC adt_c2 absoluteDynamicTopography: 28 H(x) failed.                                                 
-QC adt_c2 absoluteDynamicTopography: 40476 passed out of 40585 observations.  
-QC insitu_ts salinity: 1 missing values.                                                                                                         
-QC insitu_ts salinity: 22936 H(x) failed.                                                                                                        
-QC insitu_ts salinity: 365192 passed out of 388129 observations.                                                                                 
-QC insitu_ts waterTemperature: 178 missing values.                                                                                               
-QC insitu_ts waterTemperature: 22879 H(x) failed.                                                                                                
-QC insitu_ts waterTemperature: 149223 rejected by first-guess check.                                                                             
-QC insitu_ts waterTemperature: 215849 passed out of 388129 observations.  
+QC sst_avhrr_metop-b seaSurfaceSkinTemperature: 0 passed out of 809406 observations.
+QC sst_avhrr_metop-b seaSurfaceTemperature: 5 out of bounds.
+QC sst_avhrr_metop-b seaSurfaceTemperature: 34203 H(x) failed.
+QC sst_avhrr_metop-b seaSurfaceTemperature: 775198 passed out of 809406 observations.
+QC adt_c2 absoluteDynamicTopography: 81 out of bounds.
+QC adt_c2 absoluteDynamicTopography: 28 H(x) failed.
+QC adt_c2 absoluteDynamicTopography: 40476 passed out of 40585 observations.
+QC insitu_ts salinity: 1 missing values.
+QC insitu_ts salinity: 22936 H(x) failed.
+QC insitu_ts salinity: 365192 passed out of 388129 observations.
+QC insitu_ts waterTemperature: 178 missing values.
+QC insitu_ts waterTemperature: 22879 H(x) failed.
+QC insitu_ts waterTemperature: 149223 rejected by first-guess check.
+QC insitu_ts waterTemperature: 215849 passed out of 388129 observations.
 ```
 
 Output observation files are generated as defined in the `obsdataout` section of each observation space. Look at the contents of one of the output in `obs_out/`, for example:
@@ -231,18 +234,18 @@ The background error section looks similar to what was done in the previous sect
 The output log contains some useful information. It has the same observation hofx and qc information that the hofx application produced. It also shows the final analysis and increment values, lets look at those to make sure everything is working:
 
 ```text
-CostFunction::addIncrement: Increment:                                                                                                           
-  Valid time: 2021-08-01T12:00:00Z                                                                                                               
-   socn   min=  -52.225874   max=    2.759373   mean=   -0.002550                                                                                
-   tocn   min=  -42.685815   max=   55.446582   mean=   -0.005559                                                                                
-    ssh   min=   -2.106387   max=   11.213957   mean=    0.002550                                                                                
+CostFunction::addIncrement: Increment:
+  Valid time: 2021-08-01T12:00:00Z
+   socn   min=  -52.225874   max=    2.759373   mean=   -0.002550
+   tocn   min=  -42.685815   max=   55.446582   mean=   -0.005559
+    ssh   min=   -2.106387   max=   11.213957   mean=    0.002550
   ...
 
-CostFunction::addIncrement: Analysis:                                                                                                            
-  Valid time: 2021-08-01T12:00:00Z                                                                                                               
-   socn   min=  -17.546187   max=   40.756473   mean=   34.283437                                                                                
-   tocn   min=  -14.931892   max=   69.766894   mean=    7.859047                                                                                
-    ssh   min=   -2.176699   max=   10.284270   mean=   -0.308790                                                                                
+CostFunction::addIncrement: Analysis:
+  Valid time: 2021-08-01T12:00:00Z
+   socn   min=  -17.546187   max=   40.756473   mean=   34.283437
+   tocn   min=  -14.931892   max=   69.766894   mean=    7.859047
+    ssh   min=   -2.176699   max=   10.284270   mean=   -0.308790
   ...
 ```
 
@@ -256,7 +259,7 @@ You could look at the observation output file. Similar to the hofx application, 
 - `EffectiveQC1` - The same as `EffectiveQC0`, though after the first outer iteration of 3DVAR
 - `ombg` - observation minus background, effectively the same as `(ObsValue - hofx0)`
 - `oman` - observation minus analysis, effectively the same as `(ObsValue - hofx1)`
-  
+
 The executable produces two other output files, an increment (`ocn.3dvar.incr.2021-08-01T12:00:00Z.nc`), and an analysis (`ocn.3dvar.an.2021-08-01T12:00:00Z.nc`) ( which is just the increment plus the background). If you open those you'll see that there are some large increments and bad analysis in a few localized spots.
 
 | bad SSH Analysis without QC|
@@ -273,14 +276,14 @@ For each observation space in the config file you can  enable one or more QC fil
 > Enable the following sections of quality control filters in `3dvar.yaml`
 
 (If you're curious about how complicated QC filters could get, check out what we are currently using for the full set of QC for the insitu obs in [`ocean_profile.yaml`](./ocean_profile.yaml) !)
-  
+
 #### Bounds Check
 
 The [Bounds Check Filter](https://jointcenterforsatellitedataassimilation-jedi-docs.readthedocs-hosted.com/en/latest/inside/jedi-components/ufo/qcfilters/GenericQC.html#bounds-check-filter) simply rejects observations that lie outside specific min/max values. Here, temperature obs outside -1.9 to 40.0 C are rejected, and salinity observations outside 2.0 to 41.0 PSU are rejected.
 
 ```yaml
 - filter: Bounds Check
-  filter variables: [{name: waterTemperature}]      
+  filter variables: [{name: waterTemperature}]
   minvalue: -1.9
   maxvalue: 40.0
 
@@ -299,7 +302,7 @@ The [Domain Check Filter](https://jointcenterforsatellitedataassimilation-jedi-d
   filter variables: [{name: waterTemperature}]
   where:
   - variable: {name: ObsError/waterTemperature}
-    minvalue: 0.001      
+    minvalue: 0.001
 ```
 
 #### Background Check
@@ -378,7 +381,7 @@ DRPCG end of iteration 1
   Quadratic cost function: JoJc( 1) = 660206561.4748795
 
 ...
- 
+
 DRPCG end of iteration 2
   Gradient reduction ( 2) = 1928596.023566572
   Norm reduction ( 2) = 0.3778120399839757
@@ -468,7 +471,7 @@ One thing to notice is that the background time is no longer at the center of th
 
 Also, if you actually ran the 3DFGAT and looked at the output, you should notice that the output is the same as the simple 3DVAR case, this is because the same background file was used for each time slot! (I didn't have multiple time slots available in the input data)
 
-The next tutorial will present how to add a hybrid ensemble background error covariance to run a 3DEnVAR. 
+The next tutorial will present how to add a hybrid ensemble background error covariance to run a 3DEnVAR.
 
 ---
 [Prev: SOCA Initialization](../init/README.md) | [Next: SOCA 3DEnVAR](../3denvar/README.md)

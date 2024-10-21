@@ -21,7 +21,8 @@ The following tutorial assumes you have already set up your environment,
 compiled soca, and downloaded the tutorial input data. ([See previous
 section](../README.md))
 
->[!CAUTION] TODO - change when released
+>[!CAUTION]
+> <!--  TODO - change when released -->
 > Note that the input data tar file has not been updated yet
 > (`fields_metadata.yml` should be removed). As a workaround for
 > the following steps, after doing `ln -s ../../input_data/* .` you should `rm

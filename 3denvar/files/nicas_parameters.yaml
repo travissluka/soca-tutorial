@@ -8,7 +8,8 @@ background:
   basename: ./bkg/
   date: &date 2022-02-15T12:00:00Z
   ocn_filename: ocn.bkg.2019080112.nc
-  state variables: [tocn]
+  state variables:
+  - sea_water_potential_temperature
 
 background error:
   covariance model: SABER
@@ -24,7 +25,7 @@ background error:
         write local nicas: true
       nicas:
         #> Check the log, and make sure this is larger than nc1max!
-        max horizontal grid size: 150000 
+        max horizontal grid size: 150000
         resolution: 8.0
         explicit length-scales: true
         horizontal length-scale:
@@ -40,4 +41,4 @@ background error:
       grids:
       - model:
           variables:
-          - tocn
+          - sea_water_potential_temperature

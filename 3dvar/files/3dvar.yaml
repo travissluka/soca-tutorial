@@ -6,7 +6,7 @@ variational:
   - geometry: &geom
       geom_grid_file: ./soca_gridspec.nc
       mom6_input_nml: ./mom_input.nml
-      fields metadata: ./fields_metadata.yml  
+      fields metadata: ./fields_metadata.yml
     ninner: 20
     gradient norm reduction: 1e-3
     diagnostics:
@@ -14,11 +14,11 @@ variational:
     online diagnostics:
       write increment: true
       increment:
-        state component:      
+        state component:
           datadir: ./
           date: 2021-08-01T12:00:00Z
           exp: 3dvar
-          type: incr      
+          type: incr
 
 cost function:
   cost type: 3D-Var
@@ -26,40 +26,46 @@ cost function:
     begin: 2021-08-01T00:00:00Z
     length: PT24H
   geometry: *geom
-  analysis variables: &soca_vars [socn, tocn, ssh, hocn, mld, layer_depth]
+  analysis variables: &soca_an_vars
+  - sea_water_potential_temperature
+  - sea_water_salinity
+  - sea_surface_height_above_geoid
 
   background:
     read_from_file: 1
     basename: ./bkg/
     ocn_filename: ocn.bkg.2019080112.nc
     date: &date 2021-08-01T12:00:00Z
-    state variables: [socn, tocn, ssh, hocn, mld, layer_depth]
+    state variables:
+    - sea_water_potential_temperature
+    - sea_water_salinity
+    - sea_surface_height_above_geoid
+    - sea_water_cell_thickness
+    - ocean_mixed_layer_thickness
+    - sea_water_depth
 
   background error:
     covariance model: SABER
     saber central block:
-      saber block name: EXPLICIT_DIFFUSION
-      active variables: [tocn, socn, ssh]
-      geometry: *geom
-      group mapping:
-      - name: group1
-        variables: [tocn, socn]
-      - name: group2
-        variables: [ssh]
+      saber block name: diffusion
       read:
         groups:
-        - name: group1
+        - variables:
+          - sea_water_potential_temperature
+          - sea_water_salinity
           horizontal:
-            filename: ./diffusion_hz.nc
+            filepath: ./diffusion_hz
           vertical:
-            filename: ./diffusion_vt.nc
-        - name: group2          
+            levels: 75
+            filepath: ./diffusion_vt
+        - variables:
+          - sea_surface_height_above_geoid
           horizontal:
-            filename: ./diffusion_hz.nc
+            filepath: ./diffusion_hz
 
     linear variable change:
-      input variables: *soca_vars
-      output variables: *soca_vars
+      input variables: *soca_an_vars
+      output variables: *soca_an_vars
       linear variable changes:
       - linear variable change name: BkgErrGODAS
         sst_bgerr_file: ./godas_sst_bgerr.nc
@@ -86,7 +92,7 @@ cost function:
           nlayers: 2
 
   observations:
-    observers:  
+    observers:
 
     - obs space:
         name: insitu_ts
@@ -98,7 +104,7 @@ cost function:
           engine:
             type: H5File
             obsfile: ./obs_out/3dvar.ocean_profile.20210801T120000Z.nc4
-        simulated variables: [waterTemperature, salinity]          
+        simulated variables: [waterTemperature, salinity]
       obs operator:
         name: Composite
         components:
@@ -118,14 +124,14 @@ cost function:
     #   obs filters:
     #   # Filters for T
     #   - filter: Bounds Check
-    #     filter variables: [{name: waterTemperature}]      
+    #     filter variables: [{name: waterTemperature}]
     #     minvalue: -1.9
-    #     maxvalue: 40.0        
+    #     maxvalue: 40.0
     #   - filter: Domain Check
     #     filter variables: [{name: waterTemperature}]
     #     where:
     #     - variable: {name: ObsError/waterTemperature}
-    #       minvalue: 0.001      
+    #       minvalue: 0.001
     #   - filter: Background Check
     #     filter variables: [{name: waterTemperature}]
     #     threshold: 5
@@ -193,9 +199,9 @@ cost function:
     #   - filter: Domain Check
     #     where:
     #     - variable: {name: GeoVaLs/sea_floor_depth_below_sea_surface}
-    #       minvalue: 2000     
+    #       minvalue: 2000
     #   - filter: Background Check
-    #     threshold: 4.0                 
+    #     threshold: 4.0
 
 final:
   diagnostics:
