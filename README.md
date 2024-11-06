@@ -55,6 +55,9 @@ You'll then load the modules specific for the SOCA environment
 module load soca-env
 module load fms
 module load sp
+## UNCOMMENT next two lines for orion:
+#module unload git-lfs
+#module load git-lfs/3.1.2
 ```
 
 last, depending on which machine you're on, you'll probably require the following commands
