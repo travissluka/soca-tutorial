@@ -11,6 +11,7 @@ import sys
 
 TUTORIAL_ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
+
 """
 This script generates a test script from a tutorial markdown file. The script is
 used to run the tutorial commands in a CI/CD pipeline.
@@ -91,6 +92,15 @@ class SectionInfo:
 
 # -------------------------------------------------------------------------------------------------
 
+def get_physical_cores():
+  """ Get the number of physical cores on the system
+  note this only works on linux systems
+  """
+  cores_per_socket = int(os.popen("lscpu | awk '/^Core\\(s\\) per socket:/ {print $4}'").read().strip())
+  sockets = int(os.popen("lscpu | awk '/^Socket\\(s\\):/ {print $2}'").read().strip())
+  return cores_per_socket * sockets
+
+
 def parseMarkdown(markdownFile: str) -> SectionInfo:
   """ Parse a markdown file and return a tree of sections and test commands
   """
@@ -159,7 +169,7 @@ def genTestScript(sections: SectionInfo) -> List[str]:
     set -eu
 
     SOCA_TUTORIAL_ROOT={TUTORIAL_ROOT}
-    NP=$(($(nproc) > 10 ? 10 : $(nproc)))
+    NP={get_physical_cores()}
     LOG_FILE=$(pwd)/output.log
 
     run_cmd() {{
@@ -253,11 +263,22 @@ def main():
     for h in headers:
       print(f"{h}")
       for c in h.commands:
-        print(f"  [{c.index}]  {c}", end="")
+        print(f"  [{c.index}]  {c}  ", end="")
         sys.stdout.flush()
         # wait for the command to finish
         while True:
           output = process.stdout.readline()
+          if output == "" and process.poll() is not None:
+            # we usually on get here if there has been an error in the script
+            # (possibly an unbound variable?)
+            # print everything there is in the stderr and exit
+            print("\033[91m[ERROR]\033[0m\n")
+            while True:
+              err = process.stderr.readline()
+              if err == "":
+                break
+              print(err)
+            sys.exit(1)
 
           # match end of command
           match = RE_CMD_RET.match(output)
@@ -267,12 +288,12 @@ def main():
             if retIndex != c.index:
               raise Exception(f"Error in command index {c.index}")
             elif retType == "ERR":
-              print("  \033[91m[ERROR]\033[0m")
-              print(f"   ERROR: command exited with error code: {match.group('exit')}")
-              print("           see output.log for details")
+              print("\033[91m[ERROR]\033[0m\n")
+              print(f"command exited with error code: {match.group('exit')}")
+              print("see output.log for details")
               sys.exit(1)
             elif retType == "END":
-              print("  \033[92m[OK]\033[0m")
+              print("\033[92m[OK]\033[0m")
               break
 
     # wait for the final "section end" message
