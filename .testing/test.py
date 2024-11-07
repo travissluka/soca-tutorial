@@ -9,8 +9,9 @@ from dataclasses import dataclass, field
 from typing import List
 import sys
 
-TUTORIAL_ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
+TEST_SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
+TUTORIAL_ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
 """
 This script generates a test script from a tutorial markdown file. The script is
@@ -168,6 +169,7 @@ def genTestScript(sections: SectionInfo) -> List[str]:
   commands.append(textwrap.dedent(f"""\
     set -eu
 
+    TEST_SCRIPT_DIR={TEST_SCRIPT_DIR}
     SOCA_TUTORIAL_ROOT={TUTORIAL_ROOT}
     NP={get_physical_cores()}
     LOG_FILE=$(pwd)/output.log
@@ -182,10 +184,10 @@ def genTestScript(sections: SectionInfo) -> List[str]:
       # echo "RUN_CMD line=$line_number cmd=$cmd" >> $LOG_FILE
       echo "RUN_CMD_START line=$line_number"
       "${{cmd[@]}}" >> $LOG_FILE 2>&1 \\
-        && echo "RUN_CMD_END line=$line_number" \\
         || (exit_code=$?; [ $exit_code -eq $err_code ] \\
           && echo "RUN_CMD_END line=$line_number" \\
           || (echo "RUN_CMD_ERR line=$line_number exit=$exit_code" && exit 1))
+      echo "RUN_CMD_END line=$line_number"
     }}
 
     #---------------------------------------------
@@ -269,10 +271,11 @@ def main():
         while True:
           output = process.stdout.readline()
           if output == "" and process.poll() is not None:
-            # we usually on get here if there has been an error in the script
+            # we usually get here if there has been an error in the script
             # (possibly an unbound variable?)
             # print everything there is in the stderr and exit
             print("\033[91m[ERROR]\033[0m\n")
+            print("Error in script execution")
             while True:
               err = process.stderr.readline()
               if err == "":
