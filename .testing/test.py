@@ -158,60 +158,42 @@ def parseMarkdown(markdownFile: str) -> SectionInfo:
         # add command
         currentSection.commands.append(RunCommand(line, codeBlockArgs))
 
+  # give all the commands an increasing unique index
+  headers = rootSection.flatten()
+  cmdCount = 0
+  for h in headers:
+    for c in h.commands:
+      cmdCount += 1
+      c.index = cmdCount
+
   return rootSection
 
 # -------------------------------------------------------------------------------------------------
+RUN_HEADER=textwrap.dedent(f"""\
+  set -eu
 
-def genTestScript(sections: SectionInfo) -> List[str]:
-  commands = []
+  TEST_SCRIPT_DIR={TEST_SCRIPT_DIR}
+  SOCA_TUTORIAL_ROOT={TUTORIAL_ROOT}
+  NP={get_physical_cores()}
+  LOG_FILE=$(pwd)/output.log
 
-  # prepare script header
-  commands.append(textwrap.dedent(f"""\
-    set -eu
+  run_cmd() {{
+    # wrapper to run a command, log the output, and check the return code
+    # note that we pull cmd from a global array, to get around issues with
+    # quotes getting messed up when passing the command as a string
+    local line_number=$1
+    local err_code=$2
+    shift 2
+    # echo "RUN_CMD line=$line_number cmd=$cmd" >> $LOG_FILE
+    echo "RUN_CMD_START line=$line_number"
+    "${{cmd[@]}}" >> $LOG_FILE 2>&1 \\
+      || (exit_code=$?; [ $exit_code -eq $err_code ] \\
+        || (echo "RUN_CMD_ERR line=$line_number exit=$exit_code" && exit 1))
+    echo "RUN_CMD_END line=$line_number"
+  }}
 
-    TEST_SCRIPT_DIR={TEST_SCRIPT_DIR}
-    SOCA_TUTORIAL_ROOT={TUTORIAL_ROOT}
-    NP={get_physical_cores()}
-    LOG_FILE=$(pwd)/output.log
-
-    run_cmd() {{
-      # wrapper to run a command, log the output, and check the return code
-      # note that we pull cmd from a global array, to get around issues with
-      # quotes getting messed up when passing the command as a string
-      local line_number=$1
-      local err_code=$2
-      shift 2
-      # echo "RUN_CMD line=$line_number cmd=$cmd" >> $LOG_FILE
-      echo "RUN_CMD_START line=$line_number"
-      "${{cmd[@]}}" >> $LOG_FILE 2>&1 \\
-        || (exit_code=$?; [ $exit_code -eq $err_code ] \\
-          && echo "RUN_CMD_END line=$line_number" \\
-          || (echo "RUN_CMD_ERR line=$line_number exit=$exit_code" && exit 1))
-      echo "RUN_CMD_END line=$line_number"
-    }}
-
-    #---------------------------------------------
-    """))
-
-  commands.append("echo RUN_SECTION_START")
-
-  cmdCount=0
-  stack: List[SectionInfo] = []
-  stack.append(sections)
-  while stack:
-    current = stack.pop()
-    commands.append(current.bash())
-    for cmd in current.commands:
-      cmdCount += 1
-      cmd.index = cmdCount
-      commands.append(cmd.bash())
-    if current.children:
-      for c in reversed(current.children):
-        stack.append(c)
-
-  commands.append("echo RUN_SECTION_END")
-
-  return commands
+  #---------------------------------------------
+  """)
 
 # -------------------------------------------------------------------------------------------------
 
@@ -240,48 +222,57 @@ def main():
 
   # for each section
   for section in sections:
-    sectionTree = parseMarkdown(section)
-    runScript = genTestScript(sectionTree)
+    tutorialSection = parseMarkdown(section).flatten()
 
     # output script to screen, and quit
     if args.gen_only:
-      for l in runScript:
-        # print the script
-        print(l)
+      print(RUN_HEADER)
+      for s in tutorialSection:
+        print(s)
+        for c in s.commands:
+          print(c.bash())
       continue
 
     # start running the script
     print(f"\033[93mRunning tutorial section: {section}\033[0m")
     process = subprocess.Popen(
-      ["bash"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+      ["bash"], stdin=subprocess.PIPE, stderr=subprocess.PIPE, stdout=subprocess.PIPE, text=True
     )
-    for line in runScript:
-      process.stdin.write(line + "\n")
-    process.stdin.close()
+    process.stdin.write(RUN_HEADER)
+    process.stdin.write("echo RUN_SECTION_START\n")
+
+    # helper function to read from the process
+    # and print any errors that occur
+    def waitRead():
+      output = process.stdout.readline()
+      if output == "" and process.poll() is not None:
+        # we usually get here if there has been an error in the script
+        # (possibly an unbound variable?)
+        # print everything there is in the stderr and exit
+        print("\033[91m[ERROR]\033[0m\n")
+        print("Error in script execution")
+        while True:
+          err = process.stderr.readline()
+          if err == "":
+            break
+          print(err)
+        sys.exit(1)
+      return output
 
     # start printing information about the section, and wait for commands to finish
-    headers = sectionTree.flatten()
     RE_CMD_RET = re.compile(r"RUN_CMD_(?P<status>END|ERR|START) line=(?P<line>\d+)(?: exit=(?P<exit>\d+))?")
-    for h in headers:
+    for h in tutorialSection:
       print(f"{h}")
       for c in h.commands:
+        # issue the bash command
         print(f"  [{c.index}]  {c}  ", end="")
         sys.stdout.flush()
+        process.stdin.write(f"{c.bash()}\n")
+        process.stdin.flush()
+
         # wait for the command to finish
         while True:
-          output = process.stdout.readline()
-          if output == "" and process.poll() is not None:
-            # we usually get here if there has been an error in the script
-            # (possibly an unbound variable?)
-            # print everything there is in the stderr and exit
-            print("\033[91m[ERROR]\033[0m\n")
-            print("Error in script execution")
-            while True:
-              err = process.stderr.readline()
-              if err == "":
-                break
-              print(err)
-            sys.exit(1)
+          output = waitRead()
 
           # match end of command
           match = RE_CMD_RET.match(output)
@@ -298,17 +289,23 @@ def main():
             elif retType == "END":
               print("\033[92m[OK]\033[0m")
               break
+            elif retType == "START":
+              # do something with this info??
+              pass
 
     # wait for the final "section end" message
+    process.stdin.write("echo RUN_SECTION_END\n")
+    process.stdin.close()
     while True:
-      output = process.stdout.readline()
+      output = waitRead()
       if output.startswith("RUN_SECTION_END"):
         print("\033[92mSection complete!\033[0m")
         break
       else:
         raise Exception("Error in section completion")
 
-    # check for errors
+    # check for program termination and errors
+    process.wait()
     return_code = process.poll()
     if return_code:
       raise subprocess.CalledProcessError(return_code, "bash")
