@@ -101,6 +101,16 @@ def get_physical_cores():
   sockets = int(os.popen("lscpu | awk '/^Socket\\(s\\):/ {print $2}'").read().strip())
   return cores_per_socket * sockets
 
+def consoleGreen(msg):
+  return f"\033[92m{msg}\033[0m"
+
+def consoleYellow(msg):
+  return f"\033[93m{msg}\033[0m"
+
+def consoleRed(msg):
+  return f"\033[91m{msg}\033[0m"
+
+# -------------------------------------------------------------------------------------------------
 
 def parseMarkdown(markdownFile: str) -> SectionInfo:
   """ Parse a markdown file and return a tree of sections and test commands
@@ -234,7 +244,7 @@ def main():
       continue
 
     # start running the script
-    print(f"\033[93mRunning tutorial section: {section}\033[0m")
+    print(consoleYellow(f"Running tutorial: {section}"))
     process = subprocess.Popen(
       ["bash"], stdin=subprocess.PIPE, stderr=subprocess.PIPE, stdout=subprocess.PIPE, text=True
     )
@@ -249,7 +259,7 @@ def main():
         # we usually get here if there has been an error in the script
         # (possibly an unbound variable?)
         # print everything there is in the stderr and exit
-        print("\033[91m[ERROR]\033[0m\n")
+        print(consoleRed("[ERROR]"))
         print("Error in script execution")
         while True:
           err = process.stderr.readline()
@@ -282,12 +292,12 @@ def main():
             if retIndex != c.index:
               raise Exception(f"Error in command index {c.index}")
             elif retType == "ERR":
-              print("\033[91m[ERROR]\033[0m\n")
+              print(consoleRed("[ERROR]"))
               print(f"command exited with error code: {match.group('exit')}")
               print("see output.log for details")
               sys.exit(1)
             elif retType == "END":
-              print("\033[92m[OK]\033[0m")
+              print(consoleGreen("[OK]"))
               break
             elif retType == "START":
               # do something with this info??
@@ -299,7 +309,7 @@ def main():
     while True:
       output = waitRead()
       if output.startswith("RUN_SECTION_END"):
-        print("\033[92mSection complete!\033[0m")
+        print(consoleGreen("Section complete!"))
         break
       else:
         raise Exception("Error in section completion")
