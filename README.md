@@ -9,8 +9,8 @@
     - [Testing](#testing)
   - [Tutorial Experiments](#tutorial-experiments)
 
->[!CAUTION]
-> This tutorial is still a work in progress. When done, it will be transferred to the official JCSDA repos.
+<!-- @test_run cmd="cd ${SOCA_TUTORIAL_ROOT}" -->
+<!-- @test_run cmd="rm -rf tutorial/setup" -->
 
 >[!CAUTION]
 > <!--  TODO - change when released -->
@@ -18,8 +18,19 @@
 > with a non-release version of the JEDI bundle from Travis'
 > personal fork on github, [travissluka/jedi-bundle:
 > release/soca](https://github.com/travissluka/jedi-bundle/tree/release/soca).
-> The rest of the documentation has not been reflected to show this. Check with
-> Travis that you are using the right version of things!
+> Check with Travis that you are using the right version of things!
+
+---
+
+Throughout this tutorial, be sure to pay special attention to any sections in special colors:
+
+> [!IMPORTANT]
+> These purple sections of the tutorial require action on your part, be sure to do them in order!
+
+> [!TIP]
+> These green sections are optional actions on your part, you can skip them if you want
+
+---
 
 The Sea-ice, Ocean, and Coupled Assimilation interface (SOCA) is the MOM6 interface to JEDI. In addition to ocean, any variables that are on the MOM6 grid can be handled (sea-ice, biogeochemistry, etc.)
 
@@ -27,14 +38,14 @@ This tutorial will help users to setup an environment on a supported machine, co
 
 The two primary sources of additional documentation are updated quarterly with every release of JEDI, the latest releases are here:
 
-- [JEDI read-the-docs v8](https://jointcenterforsatellitedataassimilation-jedi-docs.readthedocs-hosted.com/en/8.0.0/)
-- [spack-stack v1.7.0](https://spack-stack.readthedocs.io/en/1.7.0/index.html)
+- [JEDI read-the-docs](https://jointcenterforsatellitedataassimilation-jedi-docs.readthedocs-hosted.com/en/latest/)
+- [spack-stack v1.8.0](https://spack-stack.readthedocs.io/en/latest/index.html)
 
 ## Setting up Environment
 
 The build environment is handled by `spack-stack`, which contains all the libraries needed to compile JEDI and UFS code. Fortunately, on the main HPCs that we use, `spack-stack` has already been compiled and is available as a set of modules.
 
-Load the environment for your given HPC per the [spack-stack hpc module instructions](https://spack-stack.readthedocs.io/en/1.7.0/PreConfiguredSites.html#pre-configured-sites-tier-1).
+Load the environment for your given HPC per the [spack-stack hpc module instructions](https://spack-stack.readthedocs.io/en/latest/PreConfiguredSites.html#pre-configured-sites-tier-1).
 
 For example, for the GNU compiler on Orion, you would run the following
 
@@ -59,7 +70,7 @@ module load sp
 
 last, depending on which machine you're on, you'll probably require the following commands
 
-```bash
+```bash @test_run
 export OMP_NUM_THREADS=1
 ulimit -s unlimited
 ```
@@ -72,7 +83,7 @@ You probably want to have a bash script do the above for you so that so you don'
 
 Some of the binary test files require git LFS. If this is your first time using git LFS you'll want to run the following command:
 
-```bash
+```bash @test_run
 git lfs install
 ```
 
@@ -88,72 +99,109 @@ required = true
 
 ### Downloading
 
-Each quarter, all of the individual JEDI repositories are tagged and tested, and a demonstration run (called [Skylab](https://skylab.jcsda.org) ) is performed. These stable tagged versions are available from the [jedi-bundle](https://github.com/JCSDA/jedi-bundle) repository.
+Periodically, all of the individual JEDI repositories are tagged and tested, and
+a demonstration run (called [Skylab](https://skylab.jcsda.org) ) is performed.
+These stable tagged versions are available from the
+[jedi-bundle](https://github.com/JCSDA/jedi-bundle) repository.
+
+However, JCSDA has decided to change to a less frequent release cadence. In
+order to keep giving SOCA users access to more up-to-date code, for the
+time being, I have setup a fork of the JEDI bundle at
+[github.com/travissluka/jedi-bundle](https://github.com/travissluka/jedi-bundle)
+There I will be making periodic SOCA specific tagged versions. You can either
+checkout the `release/soca` branch, which will have the most recent tagged
+release that has been generated for SOCA, or you can use a specific tag (e.g. `tag/2024.10.21`)
 
 > [!WARNING]
-> The following instructions will use the latest tagged Skylab release to ensure the source code and environment are guaranteed to be working together. You can also build from the latest `develop` branches available on GitHub, but it is advised not to do this unless you are developing SOCA/JEDI code or for some reason need the latest version and can't wait for the next quarterly release.
+> You can also build from the latest `develop` branches of the JEDI repos available on GitHub, but it is advised not to do this unless you are developing SOCA/JEDI code or for some reason need the latest version and can't wait for the periodic release.
 
-Get the latest release of the public JEDI bundle:
+> [!IMPORTANT]
+> Get the latest release of the public JEDI bundle tagged for SOCA:
+>
+> ```bash @test_run
+> mkdir -p tutorial/setup
+> cd tutorial/setup
+> git clone https://github.com/travissluka/jedi-bundle -b release/soca
+> ```
+<!-- old: git clone https://github.com/JCSDA/jedi-bundle -b release/skylab-v8 -->
 
-```bash
-git clone https://github.com/JCSDA/jedi-bundle -b release/skylab-v8
-```
+This bundle will pull the individual repositories for everything JEDI related.
+Since you only want to use SOCA, I have already commented out several un-needed
+repos to make everything compile faster. You'll see a `CMakeLists.txt` file, and
+in that file near the end are several `ecbuild_bundle( PROJECT ...` lines. If
+you are for some reason not using my fork of the bundle, you'll have to comment
+the following repos that are not needed.
 
-This bundle will pull the individual repositories for everything JEDI related. Since you only want to use SOCA, you can comment a couple of things out to make everything compile faster. You'll see a `CMakeLists.txt` file, and in that file near the end are several `ecbuild_bundle( PROJECT ...` lines, comment out the ones that we don't need for SOCA:
-
-- `crtm`
-- `fv3`
-- `femps`
+- `crtm` <!-- @test_run cmd="sed -i '/ecbuild_bundle( PROJECT crtm/s/^/#/' jedi-bundle/CMakeLists.txt" -->
+- `femps` <!-- @test_run cmd="sed -i '/ecbuild_bundle( PROJECT femps/s/^/#/' jedi-bundle/CMakeLists.txt" -->
+- `fv3` <!-- @test_run cmd="sed -i '/ecbuild_bundle( PROJECT fv3/s/^/#/' jedi-bundle/CMakeLists.txt" -->
 - `fv3-jedi-lm`
 - `fv3-jedi`
-- `mpas`
+- `mom6` (not needed because soca pulls its own copy of MOM6) <!-- @test_run cmd="sed -i '/ecbuild_bundle( PROJECT mom6/s/^/#/' jedi-bundle/CMakeLists.txt" -->
+- `mpas` <!-- @test_run cmd="sed -i '/ecbuild_bundle( PROJECT mpas/s/^/#/' jedi-bundle/CMakeLists.txt" -->
 - `mpas-jedi`
-- `coupling`
+- `coupling` <!-- @test_run cmd="sed -i '/ecbuild_bundle( PROJECT coupling/s/^/#/' jedi-bundle/CMakeLists.txt" -->
 
-Run `ecbuild` to get all the required repositories and prepare to compile:
+With the bundle checked out, we will now create a build directory and run
+`ecbuild` to initialize the build process. This will download each individual
+repository needed.
 
-```bash
-mkdir build
-cd build
-ecbuild ../
-```
+> [!IMPORTANT]
+> Run `ecbuild` to get all the required repositories and prepare to compile:
+>
+> ```bash @test_run
+> mkdir build
+> cd build
+> ecbuild ../jedi-bundle
+> ```
 
 Hopefully there were no errors at this point. If there are, it's possible that the environment was not setup correctly.
 
 ### Compiling
 
-Be sure to check the JEDI documentation for any specific compilation instructions for your machine. For example, some HPCs have memory limits on the login nodes that interfere with compiling, so it is suggested to [grab a compute node](https://jointcenterforsatellitedataassimilation-jedi-docs.readthedocs-hosted.com/en/8.0.0/using/running_skylab/HPC_users_guide.html) on those machines for compiling.
+Be sure to check the JEDI documentation for any specific compilation instructions for your machine. For example, some HPCs have memory limits on the login nodes that interfere with compiling, so it is suggested to [grab a compute node](https://jointcenterforsatellitedataassimilation-jedi-docs.readthedocs-hosted.com/en/latest/using/running_skylab/HPC_users_guide.html) on those machines for compiling.
 
 You'll want to `cd` into the soca build directory, otherwise a lot of other executables
 that soca doesn't need will get build (e.g. OOPS toy models and tests)
 
-> [!WARNING]
-> There is currently a bug in the cmake for SOCA where `mom6.x` is not getting
-> detected as a dependency and so is not build automatically when you build
-> after `cd` into the `soca` directory. `mom6.x` is needed for the ctests to
-> run. Either run `make` from the root of the build directory so that everything
-> gets built, or also `cd` into the `mom6` directory and run `make` there.
-
-```bash
-cd soca
-make -j 5
-```
+> [!IMPORTANT]
+> Compile SOCA, replacing `$NP` with the number of processors you wish to compile with
+>
+> ```bash @test_run
+> cd soca
+> make -j $NP
+> ```
 
 ### Testing
 
-Assuming SOCA compiled correctly, you should be able to run the ctests, which are simple tests using a 5 degree ocean grid. See the notes [here](https://jointcenterforsatellitedataassimilation-jedi-docs.readthedocs-hosted.com/en/8.0.0/using/running_skylab/HPC_users_guide.html) about obtaining a compute node before running the tests. Assuming you are within the `build/soca` directory, running `ctest` will only run the tests for SOCA (there are hundreds of other tests for the other JEDI components that you probably don't care about)
+Assuming SOCA compiled correctly, you should be able to run the ctests, which are simple tests using a 5 degree ocean grid. See the notes [here](https://jointcenterforsatellitedataassimilation-jedi-docs.readthedocs-hosted.com/en/latest/using/running_skylab/HPC_users_guide.html) about obtaining a compute node before running the tests. Assuming you are within the `build/soca` directory, running `ctest` will only run the tests for SOCA (there are hundreds of other tests for the other JEDI components that you probably don't care about)
+
+> [!IMPORTANT]
+> Run the ctests for SOCA
+>
+> ```bash @test_run
+> ctest
+> ```
 
 If for some reason a test fails, you can rerun a given test and view the output with `ctest -R <test name> -V`.
 
-If for some reason ALL of the tests fail, it's possible that the data files were not downloaded correctly with git lfs, double check to make sure git lfs was setup correctly. (Look at the netCDF files in `./soca/test/Data/` they should be actual netCDF files, not tet files describing which data file git lfs should download.)
+If for some reason ALL of the tests fail, it's possible that the data files were not downloaded correctly with `git lfs`, double check to make sure `git lfs` was setup correctly. (Look at the netCDF files in `./soca/test/Data/` they should be actual netCDF files, not tet files describing which data file git lfs should download.)
 
 ## Tutorial Experiments
 
-The files need for a single cycle of several DA methods are provided (observations, background, static files, and yaml configurations). To get the binary data, download the input data from our [Google drive here](https://drive.google.com/uc?export=download&id=15dpIwXWXU72hYQy-wGLuYnrVB-J0eIb4) . Unpack the file with the following command and you should now have a `soca-tutorial/input_data` directory.
+The files need for a single cycle of several DA methods are provided
+(observations, background, static files, and yaml configurations). To get the
+binary data, download the input data from our [Google drive
+here](https://drive.google.com/uc?export=download&id=15dpIwXWXU72hYQy-wGLuYnrVB-J0eIb4)
+into your root tutorial directory. Unpack the file with the following command
+and you should now have a `input_data` directory.
 
-```bash
-tar -xaf soca-tutorial.input_data.tgz
-```
+> [!IMPORTANT]
+> <!-- @test_run cmd="cd ${SOCA_TUTORIAL_ROOT}" -->
+> <!-- @test_run cmd="$TEST_SCRIPT_DIR/downloadGDriveFile 15dpIwXWXU72hYQy-wGLuYnrVB-J0eIb4" -->
+> ```bash @test_run
+> tar -xaf soca-tutorial.input_data.tgz
+> ```
 
 The SOCA tutorial proceeds in several steps:
 
@@ -163,12 +211,4 @@ The SOCA tutorial proceeds in several steps:
 4. [LETKF](letkf/README.md) (🚧 documentation still being developed)
 5. [Advanced Topics](advanced/README.md) (🚧 documentation still being developed)
 
-Afterward you should know everything you need to know to develop you own cycling experiment scripts to suit your own needs. The tutorials do assumme you already have a working knowledge of variational and ensemble DA methods. General DA background information may be added at a later date.
-
-Be sure to pay special attention to any sections in special colors:
-
-> [!IMPORTANT]
-> These purple sections of the tutorial require action on your part, be sure to do them in order!
-
-> [!TIP]
-> These green sections are optional actions on your part, you can skip them if you want
+Afterward you should know everything you need to know to develop you own cycling experiment scripts to suit your own needs. The tutorials do assume you already have a working knowledge of variational and ensemble DA methods. General DA background information may be added at a later date.

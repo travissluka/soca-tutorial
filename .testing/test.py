@@ -101,6 +101,9 @@ def get_physical_cores():
   sockets = int(os.popen("lscpu | awk '/^Socket\\(s\\):/ {print $2}'").read().strip())
   return cores_per_socket * sockets
 
+def consoleBold(msg):
+  return f"\033[1m{msg}\033[0m"
+
 def consoleGreen(msg):
   return f"\033[92m{msg}\033[0m"
 
@@ -185,7 +188,9 @@ RUN_HEADER=textwrap.dedent(f"""\
   TEST_SCRIPT_DIR={TEST_SCRIPT_DIR}
   SOCA_TUTORIAL_ROOT={TUTORIAL_ROOT}
   NP={get_physical_cores()}
-  LOG_FILE=$(pwd)/output.log
+  LOG_FILE=${{TEST_SCRIPT_DIR}}/tmp/output.log
+
+  mkdir -p $(dirname $LOG_FILE)
 
   run_cmd() {{
     # wrapper to run a command, log the output, and check the return code
@@ -243,8 +248,11 @@ def main():
           print(c.bash())
       continue
 
+    # count the number of commands, and print the section header
+    cmdCount = sum(len(h.commands) for h in tutorialSection)
+    print(consoleBold(consoleYellow(f"Running tutorial: {section} ({cmdCount} commands)")))
+
     # start running the script
-    print(consoleYellow(f"Running tutorial: {section}"))
     process = subprocess.Popen(
       ["bash"], stdin=subprocess.PIPE, stderr=subprocess.PIPE, stdout=subprocess.PIPE, text=True
     )
@@ -272,10 +280,10 @@ def main():
     # start printing information about the section, and wait for commands to finish
     RE_CMD_RET = re.compile(r"RUN_CMD_(?P<status>END|ERR|START) line=(?P<line>\d+)(?: exit=(?P<exit>\d+))?")
     for h in tutorialSection:
-      print(f"{h}")
+      print(consoleBold(h))
       for c in h.commands:
         # issue the bash command
-        print(f"  [{c.index}]  {c}  ", end="")
+        print(f"  [{c.index:>2}]  {c}  ", end="")
         sys.stdout.flush()
         process.stdin.write(f"{c.bash()}\n")
         process.stdin.flush()
